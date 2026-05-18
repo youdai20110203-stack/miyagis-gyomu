@@ -839,6 +839,39 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
   </div>
 </div>
 
+<!-- 請求書作成モーダル -->
+<div class="modal" id="invCreateModal">
+  <div class="modal-content">
+    <div class="modal-head">
+      <span class="modal-title" id="invCreateTitle">請求書を作成</span>
+      <button class="modal-close" onclick="closeModal('invCreateModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:14px;">
+        <label class="field-label">宛先（取引先名）</label>
+        <input type="text" id="invCreateClient" class="field-input" placeholder="例：山田建設 株式会社">
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label class="field-label">発行日</label>
+        <input type="date" id="invCreateIssuedAt" class="field-input">
+      </div>
+      <div class="field" style="margin-bottom:14px;">
+        <label class="field-label">支払期日 <span style="color:#b91c1c;font-weight:700;">*必須</span></label>
+        <input type="date" id="invCreateDueAt" class="field-input">
+        <div id="invCreateDueWarn" style="display:none;color:#b91c1c;font-size:11px;margin-top:4px;">支払期日を入力してください</div>
+      </div>
+      <div class="field" style="margin-bottom:6px;">
+        <label class="field-label">備考（任意）</label>
+        <textarea id="invCreateNote" class="field-input" rows="2" placeholder="振込手数料はご負担ください　など"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeModal('invCreateModal')">キャンセル</button>
+      <button class="btn" style="flex:2;" onclick="confirmCreateInvoice()">📄 作成する</button>
+    </div>
+  </div>
+</div>
+
 <!-- 顧客詳細モーダル -->
 <div class="modal" id="custDetailModal">
   <div class="modal-content">
@@ -1748,30 +1781,88 @@ generateEstimate = function() {
   }, 1300);
 };
 
-function convertToInvoice() {
-  if (!_lastEstimateData) { alert('まず見積もりを計算してください'); return; }
+function openInvCreateModal(estimateData) {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('invCreateIssuedAt').value = today;
+  document.getElementById('invCreateDueAt').value = '';
+  document.getElementById('invCreateNote').value = estimateData?.note || '';
+  document.getElementById('invCreateClient').value = estimateData?.client || '';
+  document.getElementById('invCreateTitle').textContent = estimateData ? '見積もりを請求書化' : '請求書を新規作成';
+  document.getElementById('invCreateDueWarn').style.display = 'none';
+  document.getElementById('invCreateModal').dataset.estimateJson = estimateData ? JSON.stringify(estimateData) : '';
+  document.getElementById('invCreateModal').dataset.editId = '';
+  openModal('invCreateModal');
+}
+
+function confirmCreateInvoice() {
+  const client = document.getElementById('invCreateClient').value.trim();
+  const issuedAt = document.getElementById('invCreateIssuedAt').value;
+  const dueAt = document.getElementById('invCreateDueAt').value;
+  const note = document.getElementById('invCreateNote').value.trim();
+  if (!dueAt) {
+    document.getElementById('invCreateDueWarn').style.display = 'block';
+    document.getElementById('invCreateDueAt').focus();
+    return;
+  }
+  document.getElementById('invCreateDueWarn').style.display = 'none';
+  const modal = document.getElementById('invCreateModal');
+  const editId = modal.dataset.editId;
+  const raw = modal.dataset.estimateJson;
+  const estimateData = raw ? JSON.parse(raw) : null;
+
+  if (editId) {
+    /* 編集モード: 既存請求書を上書き */
+    const arr = loadInvoices();
+    const inv = arr.find(i=>i.id===editId);
+    if (inv) {
+      inv.client = client || inv.client;
+      inv.issuedAt = new Date(issuedAt).toISOString();
+      inv.dueAt = new Date(dueAt).toISOString();
+      inv.note = note;
+      saveInvoices(arr);
+    }
+    modal.dataset.editId = '';
+    closeModal('invCreateModal');
+    haptic(12); showToast('請求書を更新しました');
+    renderInvoices();
+    return;
+  }
+
+  /* 新規作成モード */
   const iss = loadIssuer();
   if (!iss.name || !iss.regNo) {
     const msg = !iss.name
       ? '⚠ 発行者情報（社名・住所など）が未設定です。\n適格請求書として有効にするには、設定から登録してください。\n\nこのまま続けますか？'
       : '⚠ 適格請求書発行事業者の登録番号が未設定です。\n登録番号がない請求書は、受取側が消費税の仕入税額控除をできません。\n\nこのまま続けますか？';
-    if (!confirm(msg)) { openSettings(); return; }
+    if (!confirm(msg)) { closeModal('invCreateModal'); openSettings(); return; }
   }
+  const cust = loadCustomers().find(c => (estimateData?.client || client).includes(c.name));
+  const base = estimateData || { client, lines:[], subtotal:0, tax:0, total:0, taxRate:0.1, site:'' };
   const inv = {
     id: 'inv'+Date.now(),
     no: generateInvoiceNo(),
-    issuedAt: new Date().toISOString(),
-    dueAt: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+    issuedAt: new Date(issuedAt).toISOString(),
+    dueAt: new Date(dueAt).toISOString(),
     status: 'sent',
     paidAt: null,
-    ..._lastEstimateData,
+    customerId: cust?.id,
+    ...base,
+    client: client || base.client,
+    note,
   };
   const arr = loadInvoices();
   arr.unshift(inv);
   saveInvoices(arr);
+  modal.dataset.editId = '';
+  closeModal('invCreateModal');
   haptic(18); confetti({count:80,duration:2800});
   showToast('請求書を作成しました');
   switchPanel('invoice');
+}
+
+function convertToInvoice() {
+  if (!_lastEstimateData) { alert('まず見積もりを計算してください'); return; }
+  openInvCreateModal(_lastEstimateData);
 }
 
 function generateInvoiceNo() {
@@ -1863,8 +1954,24 @@ function openInvoiceDetail(id) {
     <div class="inv-action-row" style="padding:14px 0 0;">
       <button class="inv-action-btn" onclick="printInvoice('${inv.id}')">🖨 PDF出力・印刷</button>
       <button class="inv-action-btn" onclick="copyInvoiceText('${inv.id}')">📋 コピー</button>
+      <button class="inv-action-btn" onclick="openInvEdit('${inv.id}')">✏ 編集</button>
     </div>`;
   openModal('invDetailModal');
+}
+
+function openInvEdit(id) {
+  const inv = loadInvoices().find(i=>i.id===id);
+  if (!inv) return;
+  closeModal('invDetailModal');
+  document.getElementById('invCreateTitle').textContent = '請求書を編集';
+  document.getElementById('invCreateClient').value = inv.client || '';
+  document.getElementById('invCreateIssuedAt').value = new Date(inv.issuedAt).toISOString().slice(0,10);
+  document.getElementById('invCreateDueAt').value = new Date(inv.dueAt).toISOString().slice(0,10);
+  document.getElementById('invCreateNote').value = inv.note || '';
+  document.getElementById('invCreateDueWarn').style.display = 'none';
+  document.getElementById('invCreateModal').dataset.editId = id;
+  document.getElementById('invCreateModal').dataset.estimateJson = '';
+  openModal('invCreateModal');
 }
 
 function markInvoicePaid(id) {
@@ -1928,8 +2035,7 @@ function copyInvoiceText(id) {
 }
 
 function newInvoiceManual() {
-  alert('現在は「見積もり画面 → 請求書化」のフローで請求書を作成してください。\n手動作成フォームは次のバージョンで対応予定です。');
-  switchPanel('estimate');
+  openInvCreateModal(null);
 }
 
 /* ════════════════════
@@ -2542,34 +2648,7 @@ saveEstimate = function() {
   haptic(15); confetti({count:50,duration:2400});
 };
 
-const _origConvertToInvoice = convertToInvoice;
-convertToInvoice = function() {
-  if (!_lastEstimateData) { alert('まず見積もりを計算してください'); return; }
-  const iss = loadIssuer();
-  if (!iss.name || !iss.regNo) {
-    const msg = !iss.name
-      ? '⚠ 発行者情報（社名・住所など）が未設定です。\n適格請求書として有効にするには、設定から登録してください。\n\nこのまま続けますか？'
-      : '⚠ 適格請求書発行事業者の登録番号が未設定です。\n登録番号がない請求書は、受取側が消費税の仕入税額控除をできません。\n\nこのまま続けますか？';
-    if (!confirm(msg)) { openSettings(); return; }
-  }
-  const cust = loadCustomers().find(c => _lastEstimateData.client.includes(c.name));
-  const inv = {
-    id: 'inv'+Date.now(),
-    no: generateInvoiceNo(),
-    issuedAt: new Date().toISOString(),
-    dueAt: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
-    status: 'sent',
-    paidAt: null,
-    customerId: cust?.id,
-    ..._lastEstimateData,
-  };
-  const arr = loadInvoices();
-  arr.unshift(inv);
-  saveInvoices(arr);
-  haptic(18); confetti({count:80,duration:2800});
-  showToast('請求書を作成しました');
-  switchPanel('invoice');
-};
+/* convertToInvoice override removed — now handled by openInvCreateModal */
 
 /* ════════════════════
    バックアップ催促バナー
