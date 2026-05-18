@@ -335,6 +335,150 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
 
 /* ── トースト（エラー用） ── */
 .copy-toast.err{background:#dc2626;}
+
+/* ══════════════════════════════
+   ▼▼ INNOVATIVE UI ENHANCEMENTS ▼▼
+   ══════════════════════════════ */
+
+/* ── 動くメッシュ背景（トップバー） ── */
+.topbar{position:sticky;overflow:hidden;}
+.topbar::before{content:'';position:absolute;inset:-50%;background:
+  radial-gradient(circle at 18% 30%, rgba(232,160,32,.28), transparent 40%),
+  radial-gradient(circle at 78% 20%, rgba(120,160,255,.22), transparent 42%),
+  radial-gradient(circle at 45% 80%, rgba(232,160,32,.18), transparent 45%);
+  animation:meshFloat 14s ease-in-out infinite alternate;pointer-events:none;z-index:0;}
+.topbar > *{position:relative;z-index:1;}
+@keyframes meshFloat{
+  0%{transform:translate(0,0) rotate(0deg) scale(1)}
+  50%{transform:translate(3%,-2%) rotate(8deg) scale(1.1)}
+  100%{transform:translate(-2%,3%) rotate(-6deg) scale(1.05)}
+}
+
+/* ── ブランドロゴのキラリ ── */
+.topbar-brand svg{animation:logoSpin 12s linear infinite;}
+@keyframes logoSpin{to{transform:rotate(360deg)}}
+
+/* ── AI 思考オーブ（新ローダー） ── */
+.ai-orb-wrap{display:none;text-align:center;padding:18px 0 14px;}
+.ai-orb-wrap.on{display:block;animation:fadein .25s ease;}
+.ai-orb{width:88px;height:88px;margin:0 auto 14px;position:relative;}
+.ai-orb-core{position:absolute;inset:22px;border-radius:50%;
+  background:radial-gradient(circle at 35% 28%,#fff,#bfd0ff 38%,var(--navy-mid) 72%,var(--navy));
+  box-shadow:0 0 28px rgba(42,68,128,.55),0 0 60px rgba(232,160,32,.2),inset 0 -8px 14px rgba(0,0,0,.28);
+  animation:orbBreathe 1.6s ease-in-out infinite;}
+.ai-orb-ring{position:absolute;inset:0;border-radius:50%;border:1.8px solid transparent;
+  border-top-color:var(--accent);border-right-color:var(--accent2);
+  animation:orbSpin 1.6s linear infinite;}
+.ai-orb-ring-2{position:absolute;inset:9px;border-radius:50%;border:1.3px solid transparent;
+  border-bottom-color:rgba(232,160,32,.55);border-left-color:rgba(120,160,255,.7);
+  animation:orbSpin 2.4s linear infinite reverse;}
+.ai-orb-p{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;
+  background:var(--accent);box-shadow:0 0 6px var(--accent);opacity:0;
+  animation:orbParticle 2.2s ease-out infinite;}
+.ai-orb-p:nth-child(3){--tx:-34px;--ty:-22px;animation-delay:0s;}
+.ai-orb-p:nth-child(4){--tx:34px;--ty:-18px;animation-delay:.35s;background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+.ai-orb-p:nth-child(5){--tx:28px;--ty:30px;animation-delay:.7s;}
+.ai-orb-p:nth-child(6){--tx:-30px;--ty:26px;animation-delay:1.05s;background:#a3b8ff;box-shadow:0 0 6px #a3b8ff;}
+.ai-orb-p:nth-child(7){--tx:-2px;--ty:-36px;animation-delay:1.4s;background:var(--accent2);box-shadow:0 0 6px var(--accent2);}
+.ai-orb-p:nth-child(8){--tx:2px;--ty:36px;animation-delay:1.75s;}
+@keyframes orbBreathe{0%,100%{transform:scale(1);filter:brightness(1)}50%{transform:scale(1.08);filter:brightness(1.18)}}
+@keyframes orbSpin{to{transform:rotate(360deg)}}
+@keyframes orbParticle{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:0}
+  18%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{transform:translate(calc(-50% + var(--tx,0)),calc(-50% + var(--ty,0))) scale(.3);opacity:0}
+}
+.ai-orb-text{font-size:12.5px;font-weight:700;color:var(--navy);
+  display:inline-flex;align-items:center;gap:7px;min-height:18px;
+  background:rgba(255,255,255,.6);padding:5px 14px;border-radius:100px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(28,47,94,.08);box-shadow:0 2px 8px rgba(28,47,94,.06);}
+.ai-orb-text::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);
+  animation:dotBlink 1s ease-in-out infinite;flex-shrink:0;}
+.ai-orb-text-inner{display:inline-block;animation:textFade .5s ease;}
+@keyframes dotBlink{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+@keyframes textFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ── ストリーミング項目演出 ── */
+.rdoc-item.stream-in{opacity:0;transform:translateX(-10px);animation:streamIn .5s ease forwards;}
+@keyframes streamIn{
+  0%{opacity:0;transform:translateX(-10px) scale(.96);filter:blur(2px);}
+  50%{opacity:1;filter:blur(0);}
+  100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0);}
+}
+.rdoc-section.stream-in{opacity:0;animation:sectionFade .35s ease forwards;}
+@keyframes sectionFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── 見積もり明細のカスケード ── */
+.est-line.stream-in{opacity:0;animation:streamIn .4s ease forwards;}
+.est-result .est-total-row.stream-in{opacity:0;animation:streamIn .4s ease forwards;}
+
+/* ── カードホバー3Dチルト（PCのみ） ── */
+@media (hover:hover) and (pointer:fine){
+  .card,.dash-card,.hist-item,.cust-item{transition:transform .25s ease,box-shadow .25s ease,border-color .15s;}
+  .card:hover{transform:translateY(-2px) scale(1.005);box-shadow:0 8px 30px rgba(28,47,94,.13);}
+  .dash-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(28,47,94,.12);}
+  .hist-item:hover,.cust-item:hover{transform:translateX(3px);}
+  .btn-primary{position:relative;overflow:hidden;}
+  .btn-primary::after{content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+    transition:left .6s ease;}
+  .btn-primary:hover::after{left:150%;}
+}
+
+/* ── ボタン押下時のリップル感 ── */
+.btn-primary:active{transform:scale(.98);}
+.btn-accent:active{transform:scale(.98);}
+.nav-btn{transition:all .18s ease;}
+.nav-btn.active{position:relative;}
+.nav-btn.active::after{content:'';position:absolute;bottom:-2.5px;left:50%;transform:translateX(-50%);
+  width:8px;height:8px;background:var(--accent);border-radius:50%;filter:blur(4px);opacity:.7;
+  animation:navGlow 2s ease-in-out infinite;}
+@keyframes navGlow{0%,100%{opacity:.4}50%{opacity:.9}}
+
+/* ── パネル切替スライド ── */
+.panel{transform-origin:top center;}
+.panel.active{animation:panelEnter .32s cubic-bezier(.2,.8,.2,1);}
+@keyframes panelEnter{from{opacity:0;transform:translateY(8px) scale(.99);}to{opacity:1;transform:none;}}
+
+/* ── 数値カウントアップ ── */
+.dash-val.counting{font-variant-numeric:tabular-nums;}
+
+/* ── 紙吹雪コンテナ ── */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9999;overflow:hidden;}
+.confetti-piece{position:absolute;width:8px;height:14px;top:-20px;
+  animation:confettiFall linear forwards;will-change:transform,opacity;}
+@keyframes confettiFall{
+  0%{transform:translateY(0) rotate(0deg);opacity:1;}
+  100%{transform:translateY(110vh) rotate(720deg);opacity:.7;}
+}
+
+/* ── rdoc 入場のドラマ ── */
+.rdoc.on{animation:rdocEnter .45s cubic-bezier(.2,.8,.2,1);}
+@keyframes rdocEnter{
+  0%{opacity:0;transform:translateY(16px) scale(.96);}
+  60%{opacity:1;}
+  100%{opacity:1;transform:translateY(0) scale(1);}
+}
+.rdoc-done{position:relative;}
+.rdoc-done::after{content:'';position:absolute;inset:-2px;border-radius:100px;border:2px solid var(--accent);
+  opacity:0;animation:doneRipple 1.4s ease-out .3s 2;}
+@keyframes doneRipple{0%{opacity:.8;transform:scale(.9);}100%{opacity:0;transform:scale(2.2);}}
+
+/* ── マイクボタン背景にパルス ── */
+.mic-btn:not(.recording){box-shadow:0 2px 8px rgba(28,47,94,.12),0 0 0 0 rgba(28,47,94,.3);}
+
+/* ── スクロールバー（モダン） ── */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:rgba(28,47,94,.2);border-radius:100px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(28,47,94,.4);}
+
+/* ── prefers-reduced-motion 配慮 ── */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;}
+  .topbar::before{display:none;}
+}
 </style>
 </head>
 <body>
@@ -418,7 +562,16 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
         <div class="mic-hint" id="micHint">🎤 マイクボタンで音声入力できます</div>
       </div>
       <button class="btn btn-primary" id="reportBtn" onclick="generateReport()">日報を作成する</button>
-      <div class="loader" id="reportLoader"><div class="ldots"><i></i><i></i><i></i></div><p class="loader-msg">内容を解釈・整形しています…</p></div>
+      <div class="ai-orb-wrap" id="reportLoader">
+        <div class="ai-orb">
+          <div class="ai-orb-ring"></div>
+          <div class="ai-orb-ring-2"></div>
+          <div class="ai-orb-core"></div>
+          <div class="ai-orb-p"></div><div class="ai-orb-p"></div><div class="ai-orb-p"></div>
+          <div class="ai-orb-p"></div><div class="ai-orb-p"></div><div class="ai-orb-p"></div>
+        </div>
+        <div class="ai-orb-text"><span class="ai-orb-text-inner" id="reportThink">現場メモを解析中…</span></div>
+      </div>
     </div>
   </div>
 
@@ -432,11 +585,11 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       <div class="rdoc-meta-cell"><span class="rmc-label">天気 / 気温</span><span class="rmc-val" id="r-weather">—</span></div>
       <div class="rdoc-meta-cell"><span class="rmc-label">作業員</span><span class="rmc-val" id="r-workers">—</span></div>
     </div>
-    <div class="rdoc-section">
+    <div class="rdoc-section" id="r-tasks-section">
       <div class="rdoc-sec-label tasks">📋 本日の業務内容と成果</div>
       <div class="rdoc-sec-body" id="r-tasks"></div>
     </div>
-    <div class="rdoc-section">
+    <div class="rdoc-section" id="r-issues-section">
       <div class="rdoc-sec-label issues">⚠️ 発生した課題・気づき</div>
       <div class="rdoc-sec-body" id="r-issues"></div>
     </div>
@@ -444,7 +597,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       <div class="rdoc-sec-label memo">💬 特記事項・所感</div>
       <div class="rdoc-sec-body" id="r-memo"></div>
     </div>
-    <div class="rdoc-section">
+    <div class="rdoc-section" id="r-next-section">
       <div class="rdoc-sec-label next">→ 明日の予定（Next Action）</div>
       <div class="rdoc-sec-body" id="r-next"></div>
     </div>
@@ -501,7 +654,16 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       </div>
 
       <button class="btn btn-primary" id="estBtn" onclick="generateEstimate()">見積もりを計算する</button>
-      <div class="loader" id="estLoader"><div class="ldots"><i></i><i></i><i></i></div><p class="loader-msg">計算中…</p></div>
+      <div class="ai-orb-wrap" id="estLoader">
+        <div class="ai-orb">
+          <div class="ai-orb-ring"></div>
+          <div class="ai-orb-ring-2"></div>
+          <div class="ai-orb-core"></div>
+          <div class="ai-orb-p"></div><div class="ai-orb-p"></div><div class="ai-orb-p"></div>
+          <div class="ai-orb-p"></div><div class="ai-orb-p"></div><div class="ai-orb-p"></div>
+        </div>
+        <div class="ai-orb-text"><span class="ai-orb-text-inner" id="estThink">単価データを照合中…</span></div>
+      </div>
     </div>
   </div>
 
@@ -747,9 +909,108 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
 
 <script>
 /* ════════════════════
+   革新UI ユーティリティ
+════════════════════ */
+
+/* ハプティック（iOS Safari は限定的だが Android Chrome では振動） */
+function haptic(ms=8){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
+
+/* AI 思考テキストのローテーション — オーブ表示中に呼ぶ */
+const THINK_REPORT = ['現場メモを解析中…','業務カテゴリを判定…','課題と所感を抽出…','明日のアクションを推論…','日報フォーマットを構築…'];
+const THINK_EST    = ['単価データを照合中…','材料費・労務費を計算…','工期と数量を確認…','消費税を反映中…','見積もり書を整形中…'];
+let _thinkTimer = null;
+function startThinking(elId, phrases){
+  const el = document.getElementById(elId); if(!el) return;
+  let i=0; el.textContent = phrases[0];
+  clearInterval(_thinkTimer);
+  _thinkTimer = setInterval(()=>{
+    i = (i+1) % phrases.length;
+    el.style.animation='none'; void el.offsetWidth;
+    el.style.animation='textFade .5s ease';
+    el.textContent = phrases[i];
+  }, 520);
+}
+function stopThinking(){ clearInterval(_thinkTimer); _thinkTimer=null; }
+
+/* 項目を順番に表示（ストリーミング演出） */
+function cascadeReveal(parent, selector='.rdoc-item', gap=85){
+  if(!parent) return;
+  const items = parent.querySelectorAll(selector);
+  items.forEach((el,i)=>{
+    el.classList.remove('stream-in');
+    void el.offsetWidth;
+    el.style.animationDelay = (i*gap)+'ms';
+    el.classList.add('stream-in');
+  });
+}
+function cascadeSections(rootIds, gap=180){
+  rootIds.forEach((id,i)=>{
+    const sec = document.getElementById(id);
+    if(!sec) return;
+    if(sec.style.display==='none') return;
+    sec.classList.remove('stream-in');
+    void sec.offsetWidth;
+    sec.style.animationDelay = (i*gap)+'ms';
+    sec.classList.add('stream-in');
+  });
+}
+
+/* 数値カウントアップ — DOM内の "¥123,456" や "12件" を 0→値 に animate */
+function countUp(rootEl, durationMs=900){
+  if(!rootEl) return;
+  rootEl.querySelectorAll('.dash-val').forEach(el=>{
+    const raw = el.textContent.trim();
+    const m = raw.match(/([¥-]?)([\d,]+)(.*)/);
+    if(!m) return;
+    const prefix=m[1], suffix=m[3];
+    const target = parseInt(m[2].replace(/,/g,''),10);
+    if(isNaN(target) || target<=0) return;
+    const start = performance.now();
+    el.classList.add('counting');
+    function tick(now){
+      const t = Math.min(1,(now-start)/durationMs);
+      const eased = 1-Math.pow(1-t,3);
+      const v = Math.round(target*eased);
+      el.textContent = prefix + v.toLocaleString() + suffix;
+      if(t<1) requestAnimationFrame(tick);
+      else el.textContent = prefix + target.toLocaleString() + suffix;
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+/* 紙吹雪 — 軽量 DOM ベース */
+function confetti(opts={}){
+  const { count=70, duration=2800, colors=['#e8a020','#f0c060','#1c2f5e','#2a4480','#16a34a','#fff'] } = opts;
+  const wrap = document.createElement('div'); wrap.className='confetti-wrap';
+  document.body.appendChild(wrap);
+  for(let i=0;i<count;i++){
+    const p = document.createElement('div');
+    p.className='confetti-piece';
+    const c = colors[i % colors.length];
+    const left = Math.random()*100;
+    const delay = Math.random()*250;
+    const dur = duration + Math.random()*800;
+    const w = 5+Math.random()*6, h = 9+Math.random()*8;
+    const drift = (Math.random()-.5)*200;
+    p.style.cssText = `left:${left}%;background:${c};width:${w}px;height:${h}px;
+      animation-duration:${dur}ms;animation-delay:${delay}ms;
+      transform:translateX(0) rotate(${Math.random()*360}deg);`;
+    p.animate(
+      [{transform:`translate(0,0) rotate(0deg)`,opacity:1},
+       {transform:`translate(${drift}px,110vh) rotate(${720+Math.random()*360}deg)`,opacity:.4}],
+      {duration:dur,delay:delay,easing:'cubic-bezier(.25,.46,.45,.94)',fill:'forwards'}
+    );
+    wrap.appendChild(p);
+  }
+  setTimeout(()=>wrap.remove(), duration+1200);
+}
+
+/* ════════════════════
    パネル切り替え
 ════════════════════ */
 function switchPanel(id) {
+  haptic(6);
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
@@ -980,11 +1241,27 @@ let _lastReportText = '';
 
 function generateReport() {
   const raw = document.getElementById('reportInput').value.trim();
-  if (!raw) { const el = document.getElementById('reportInput'); el.focus(); el.style.borderColor='#e05252'; setTimeout(()=>{el.style.borderColor='';},1500); return; }
+  if (!raw) { const el = document.getElementById('reportInput'); el.focus(); el.style.borderColor='#e05252'; setTimeout(()=>{el.style.borderColor='';},1500); haptic(20); return; }
   _lastRawReport = raw;
+  haptic(8);
   const btn=document.getElementById('reportBtn'), loader=document.getElementById('reportLoader'), doc=document.getElementById('rdoc');
   btn.disabled=true; doc.classList.remove('on'); loader.classList.add('on');
-  setTimeout(()=>{ loader.classList.remove('on'); fillReport(raw); doc.classList.add('on'); btn.disabled=false; }, 1900);
+  startThinking('reportThink', THINK_REPORT);
+  setTimeout(()=>{
+    stopThinking(); loader.classList.remove('on');
+    fillReport(raw);
+    doc.classList.add('on');
+    /* セクション順次出現 → 内部の項目もカスケード */
+    requestAnimationFrame(()=>{
+      cascadeSections(['r-tasks-section','r-issues-section','r-memo-section','r-next-section'], 200);
+      setTimeout(()=>cascadeReveal(document.getElementById('r-tasks'),'.rdoc-item',80), 60);
+      setTimeout(()=>cascadeReveal(document.getElementById('r-issues'),'.rdoc-item',80), 240);
+      setTimeout(()=>cascadeReveal(document.getElementById('r-memo'),'.rdoc-item',80), 420);
+      setTimeout(()=>cascadeReveal(document.getElementById('r-next'),'.rdoc-item',90), 600);
+    });
+    btn.disabled=false;
+    haptic(12);
+  }, 2100);
 }
 
 function fillReport(raw) {
@@ -1058,6 +1335,7 @@ function saveReport() {
   hist.unshift({ type:'report', date: new Date().toISOString(), site, raw: _lastRawReport, text: _lastReportText });
   localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,100)));
   showToast('保存しました');
+  haptic(15); confetti({count:50,duration:2400});
 }
 
 /* ════════════════════
@@ -1161,9 +1439,11 @@ function generateEstimate() {
 
   const btn=document.getElementById('estBtn'), loader=document.getElementById('estLoader'), result=document.getElementById('estResult');
   btn.disabled=true; result.classList.remove('on'); loader.classList.add('on');
+  haptic(8);
+  startThinking('estThink', THINK_EST);
 
   setTimeout(()=>{
-    loader.classList.remove('on');
+    stopThinking(); loader.classList.remove('on');
     const client = document.getElementById('estClient').value.trim();
     const site   = document.getElementById('estSite').value.trim();
     const note   = document.getElementById('estNote').value.trim();
@@ -1185,6 +1465,9 @@ function generateEstimate() {
 
     result.classList.add('on');
     btn.disabled = false;
+    haptic(12);
+    /* 明細カスケード */
+    requestAnimationFrame(()=>cascadeReveal(document.getElementById('estLines'),'.est-line',75));
 
     /* テキスト化 */
     const d = new Date();
@@ -1198,7 +1481,7 @@ function generateEstimate() {
       '\n※ AIによる概算です。最終金額は担当者が確認・調整してください。',
     ].filter(l=>l!==null).join('\n');
     _lastEstText = txt;
-  }, 1200);
+  }, 1800);
 }
 
 function copyEstimate() { navigator.clipboard.writeText(_lastEstText).then(()=>showToast()); }
@@ -1210,6 +1493,7 @@ function saveEstimate() {
   hist.unshift({ type:'estimate', date: new Date().toISOString(), client, text: _lastEstText });
   localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,100)));
   showToast('保存しました');
+  haptic(15); confetti({count:50,duration:2400});
 }
 
 /* ════════════════════
@@ -1452,6 +1736,7 @@ function convertToInvoice() {
   const arr = loadInvoices();
   arr.unshift(inv);
   saveInvoices(arr);
+  haptic(18); confetti({count:80,duration:2800});
   showToast('請求書を作成しました');
   switchPanel('invoice');
 }
@@ -1533,7 +1818,7 @@ function openInvoiceDetail(id) {
 function markInvoicePaid(id) {
   const arr = loadInvoices();
   const inv = arr.find(i=>i.id===id);
-  if (inv) { inv.status='paid'; inv.paidAt = new Date().toISOString(); saveInvoices(arr); renderInvoices(); showToast('入金済にしました'); }
+  if (inv) { inv.status='paid'; inv.paidAt = new Date().toISOString(); saveInvoices(arr); renderInvoices(); showToast('入金済にしました'); haptic(20); confetti({count:90,duration:3000,colors:['#16a34a','#22c55e','#86efac','#e8a020','#f0c060','#fff']}); }
 }
 function markInvoiceUnpaid(id) {
   const arr = loadInvoices();
@@ -1883,6 +2168,7 @@ function renderDashboard() {
       <div class="dash-val">¥${monthlyRevenue.toLocaleString()}</div>
       <div class="dash-sub">請求発行ベース</div>
     </div>`;
+  countUp(wrap, 900);
 }
 
 /* ════════════════════
@@ -2119,6 +2405,7 @@ convertToInvoice = function() {
   const arr = loadInvoices();
   arr.unshift(inv);
   saveInvoices(arr);
+  haptic(18); confetti({count:80,duration:2800});
   showToast('請求書を作成しました');
   switchPanel('invoice');
 };
