@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Miyagi′s 業務 — 業務効率化ツール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1c2f5e;--navy-mid:#2a4480;
+  --accent:#e8a020;--accent2:#f0c060;
+  --teal:#1a7a6e;--green:#16a34a;
+  --white:#fff;--off:#f7f8fb;--border:#e2e6f0;--muted:#6b7a99;--ink:#111827;
+  --r:12px;--r-sm:8px;
+  --sh:0 2px 12px rgba(28,47,94,.09);--sh-m:0 6px 28px rgba(28,47,94,.14);
+}
+html{font-family:'Noto Sans JP',sans-serif;background:var(--off);color:var(--ink);-webkit-tap-highlight-color:transparent;}
+body{max-width:480px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--navy);padding:12px 16px 0;position:sticky;top:0;z-index:100;box-shadow:var(--sh-m);}
+.topbar-brand{display:flex;align-items:center;gap:8px;padding-bottom:12px;}
+.topbar-brand svg{width:18px;height:18px;color:var(--accent);}
+.topbar-brand span{color:var(--white);font-size:14px;font-weight:900;letter-spacing:.02em;}
+.nav{display:flex;gap:0;}
+.nav-btn{flex:1;padding:10px 6px 11px;background:transparent;border:none;cursor:pointer;
+  font-family:inherit;font-size:12px;font-weight:700;color:rgba(255,255,255,.55);
+  border-bottom:2.5px solid transparent;transition:all .18s;}
+.nav-btn.active{color:var(--white);border-bottom-color:var(--accent);}
+.nav-btn svg{display:block;margin:0 auto 4px;width:18px;height:18px;opacity:.7;}
+.nav-btn.active svg{opacity:1;color:var(--accent);}
+
+/* ── PANELS ── */
+.panel{display:none;flex:1;padding:20px 16px 32px;animation:fadein .2s ease;}
+.panel.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ── SECTION LABELS ── */
+.sec-label{font-size:10.5px;font-weight:900;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;}
+.card{background:var(--white);border-radius:var(--r);border:1px solid var(--border);box-shadow:var(--sh);overflow:hidden;margin-bottom:16px;}
+.card-head{padding:14px 16px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.card-head-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.card-head-title{font-size:14px;font-weight:900;color:var(--navy);}
+.card-head-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.card-body{padding:16px;}
+
+/* ── FORMS ── */
+textarea,input,select{
+  width:100%;font-family:inherit;font-size:13px;color:var(--ink);
+  border:1.5px solid var(--border);border-radius:var(--r-sm);
+  padding:11px 13px;outline:none;background:var(--white);
+  transition:border-color .15s;
+}
+textarea:focus,input:focus,select:focus{border-color:var(--navy-mid);}
+textarea{resize:vertical;min-height:110px;line-height:1.7;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+
+/* ── BUTTONS ── */
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:var(--r-sm);
+  font-family:inherit;font-size:14px;font-weight:900;cursor:pointer;transition:all .15s;}
+.btn-primary{background:linear-gradient(135deg,var(--navy),var(--navy-mid));color:var(--white);}
+.btn-primary:hover{filter:brightness(1.1);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;filter:none;}
+.btn-outline{background:var(--white);color:var(--navy);border:1.5px solid var(--border);font-size:13px;padding:10px;}
+.btn-outline:hover{border-color:var(--navy);background:var(--off);}
+.btn-accent{background:linear-gradient(135deg,var(--accent),var(--accent2));color:var(--navy);}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;border-radius:6px;}
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+
+/* ── LOADER ── */
+.loader{display:none;text-align:center;padding:20px 0;}
+.loader.on{display:block;}
+.ldots{display:flex;justify-content:center;gap:7px;margin-bottom:10px;}
+.ldots i{width:8px;height:8px;border-radius:50%;background:var(--navy-mid);animation:bounce .9s ease-in-out infinite;}
+.ldots i:nth-child(2){animation-delay:.15s;}
+.ldots i:nth-child(3){animation-delay:.3s;}
+@keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.loader-msg{font-size:12px;color:var(--muted);}
+
+/* ── 日報ドキュメント ── */
+.rdoc{display:none;border-radius:var(--r);overflow:hidden;border:1.5px solid #c8d4f0;margin-top:14px;}
+.rdoc.on{display:block;animation:pop .3s ease;}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+.rdoc-topbar{background:var(--navy);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.rdoc-topbar span{color:var(--white);font-size:12.5px;font-weight:700;}
+.rdoc-done{background:var(--accent);color:var(--navy);font-size:9px;font-weight:900;padding:2px 9px;border-radius:100px;}
+.rdoc-meta{display:flex;border-bottom:1px solid var(--border);background:var(--white);}
+.rdoc-meta-cell{flex:1;padding:10px 12px;display:flex;flex-direction:column;gap:2px;}
+.rdoc-meta-cell:not(:last-child){border-right:1px solid var(--border);}
+.rmc-label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.rmc-val{font-size:11.5px;font-weight:700;color:var(--ink);}
+.rdoc-section{border-bottom:1px solid var(--border);background:var(--white);}
+.rdoc-section:last-child{border-bottom:none;}
+.rdoc-sec-label{padding:9px 14px;font-size:11px;font-weight:900;display:flex;align-items:center;gap:6px;}
+.rdoc-sec-label.tasks {background:#eef3ff;color:var(--navy);}
+.rdoc-sec-label.issues{background:#fff7ed;color:#92400e;}
+.rdoc-sec-label.memo  {background:#f5f0ff;color:#5b21b6;}
+.rdoc-sec-label.next  {background:linear-gradient(90deg,#e8f5ee,#f0faf3);color:#155724;}
+.rdoc-sec-body{padding:11px 14px 13px;display:flex;flex-direction:column;gap:8px;}
+.rdoc-item{display:flex;align-items:flex-start;gap:9px;font-size:12.5px;line-height:1.65;color:var(--ink);}
+.rdoc-item-bullet{flex-shrink:0;margin-top:2px;font-size:11.5px;}
+.rdoc-item.task  .rdoc-item-bullet{color:var(--navy);}
+.rdoc-item.issue .rdoc-item-bullet{color:#d97706;}
+.rdoc-item.memo  .rdoc-item-bullet{color:#7c3aed;}
+.rdoc-item.action .rdoc-item-bullet{color:var(--green);font-weight:900;}
+.rdoc-item-text{flex:1;}
+.rdoc-empty{font-size:11.5px;color:var(--muted);font-style:italic;}
+.rdoc-actions{display:flex;gap:8px;margin-top:12px;}
+
+/* ── 履歴 ── */
+.hist-empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:13px;}
+.hist-item{background:var(--white);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s;}
+.hist-item:hover{border-color:var(--navy-mid);}
+.hist-item-date{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;}
+.hist-item-preview{font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-item-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap;}
+.htag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:var(--off);color:var(--muted);border:1px solid var(--border);}
+
+/* ── 見積もり ── */
+.est-line-head{display:grid;grid-template-columns:1fr 80px 90px;gap:6px;padding:6px 0;border-bottom:2px solid var(--navy);margin-bottom:6px;}
+.est-line-head span{font-size:10.5px;font-weight:900;color:var(--navy);}
+.est-line{display:grid;grid-template-columns:1fr 80px 90px;gap:6px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);}
+.est-line-name{font-size:12.5px;color:var(--ink);}
+.est-line-qty{font-size:12px;color:var(--muted);text-align:right;}
+.est-line-amt{font-size:12.5px;font-weight:700;color:var(--ink);text-align:right;}
+.est-total-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0 6px;}
+.est-total-row.sub{border-top:1px solid var(--border);}
+.est-total-row.grand{border-top:2px solid var(--navy);margin-top:4px;padding-top:12px;}
+.est-total-label{font-size:12.5px;color:var(--muted);}
+.est-total-val{font-size:14px;font-weight:900;color:var(--ink);}
+.est-total-row.grand .est-total-val{font-size:20px;color:var(--navy);}
+.est-note{font-size:11px;color:var(--muted);background:var(--off);border-radius:6px;padding:10px 12px;margin-top:12px;line-height:1.7;}
+.est-result{display:none;margin-top:14px;}
+.est-result.on{display:block;animation:pop .3s ease;}
+
+/* ── 見積もり行追加UI ── */
+.item-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.item-entry{background:var(--off);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px;}
+.item-entry-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.item-entry-num{font-size:11px;font-weight:900;color:var(--navy);}
+.item-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:18px;line-height:1;padding:0 2px;}
+.item-del:hover{color:#e05252;}
+
+/* ── 税率バッジ ── */
+.tax-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.tax-label{font-size:11.5px;font-weight:700;color:var(--muted);}
+.tax-select{width:auto;padding:7px 10px;font-size:12.5px;}
+
+/* ── コピー通知 ── */
+.copy-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--navy);color:var(--white);font-size:12.5px;font-weight:700;
+  padding:10px 20px;border-radius:100px;box-shadow:var(--sh-m);
+  transition:transform .25s ease,opacity .25s;opacity:0;pointer-events:none;z-index:999;}
+.copy-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+
+/* ── BOTTOM NAV SAFE AREA ── */
+.safe-bottom{height:env(safe-area-inset-bottom,8px);}
+
+/* ── 5-tab nav 調整 ── */
+.nav-btn{font-size:10.5px;padding:9px 2px 10px;}
+.nav-btn svg{width:17px;height:17px;margin-bottom:3px;}
+
+/* ── 顧客選択ボタン（フィールド横） ── */
+.field-with-picker{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:end;}
+.picker-btn{padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);
+  background:var(--off);font-family:inherit;font-size:11.5px;font-weight:700;color:var(--navy);
+  cursor:pointer;white-space:nowrap;transition:all .15s;}
+.picker-btn:hover{border-color:var(--navy);background:var(--white);}
+
+/* ── マイクボタン ── */
+.textarea-wrap{position:relative;}
+.mic-btn{position:absolute;bottom:8px;right:8px;width:36px;height:36px;border-radius:50%;
+  border:none;background:var(--white);box-shadow:var(--sh);cursor:pointer;display:flex;
+  align-items:center;justify-content:center;color:var(--navy);transition:all .15s;}
+.mic-btn:hover{background:var(--navy);color:var(--white);}
+.mic-btn.recording{background:#e05252;color:var(--white);animation:pulse 1.2s infinite;}
+.mic-btn svg{width:18px;height:18px;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(224,82,82,.5)}50%{box-shadow:0 0 0 8px rgba(224,82,82,0)}}
+.mic-hint{font-size:10.5px;color:var(--muted);margin-top:5px;text-align:right;}
+
+/* ── 顧客カードリスト ── */
+.cust-empty{text-align:center;padding:36px 16px;color:var(--muted);font-size:13px;}
+.cust-item{background:var(--white);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:14px 14px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.cust-info{flex:1;min-width:0;}
+.cust-name{font-size:14px;font-weight:900;color:var(--navy);margin-bottom:4px;}
+.cust-meta{font-size:11.5px;color:var(--muted);line-height:1.55;}
+.cust-meta-line{display:flex;align-items:center;gap:5px;}
+.cust-meta-line svg{width:11px;height:11px;flex-shrink:0;color:var(--muted);}
+.cust-actions{display:flex;flex-direction:column;gap:4px;}
+.cust-action-btn{padding:5px 10px;font-size:10.5px;font-weight:700;border-radius:5px;
+  border:1px solid var(--border);background:var(--white);cursor:pointer;color:var(--muted);
+  font-family:inherit;transition:all .15s;white-space:nowrap;}
+.cust-action-btn:hover{border-color:var(--navy);color:var(--navy);}
+.cust-action-btn.del:hover{border-color:#e05252;color:#e05252;}
+
+/* ── モーダル ── */
+.modal{display:none;position:fixed;inset:0;background:rgba(28,47,94,.55);z-index:200;
+  align-items:flex-end;justify-content:center;animation:fadein .2s ease;}
+.modal.on{display:flex;}
+.modal-content{background:var(--white);width:100%;max-width:480px;max-height:85vh;
+  border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:slideup .25s ease;}
+@keyframes slideup{from{transform:translateY(40px);opacity:.7}to{transform:none;opacity:1}}
+.modal-head{padding:16px 18px 12px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-size:14px;font-weight:900;color:var(--navy);}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--muted);font-size:22px;line-height:1;padding:0 2px;}
+.modal-body{padding:14px 16px 16px;overflow-y:auto;flex:1;}
+.modal-foot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;}
+
+/* ── 請求書 ── */
+.inv-status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:100px;
+  font-size:10.5px;font-weight:900;}
+.inv-status-pill.draft  {background:#f3f4f6;color:#6b7280;}
+.inv-status-pill.sent   {background:#dbeafe;color:#1e40af;}
+.inv-status-pill.paid   {background:#d1fae5;color:#065f46;}
+.inv-status-pill.overdue{background:#fee2e2;color:#b91c1c;}
+
+.inv-meta{padding:14px 16px;background:var(--off);border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;}
+.inv-meta-cell{font-size:11px;}
+.inv-meta-label{color:var(--muted);font-weight:700;margin-bottom:2px;display:block;}
+.inv-meta-val{color:var(--ink);font-weight:700;font-size:12px;}
+
+.inv-action-row{display:flex;gap:6px;padding:0 16px 14px;flex-wrap:wrap;}
+.inv-action-btn{flex:1;min-width:46%;padding:9px;font-size:11.5px;font-weight:700;
+  border:1px solid var(--border);background:var(--white);border-radius:6px;
+  cursor:pointer;font-family:inherit;color:var(--navy);transition:all .15s;}
+.inv-action-btn:hover{border-color:var(--navy);background:var(--off);}
+.inv-action-btn.paid-mark{background:#d1fae5;color:#065f46;border-color:#a7f3d0;}
+.inv-action-btn.paid-mark:hover{background:#a7f3d0;}
+
+/* ── 印刷スタイル ── */
+@media print {
+  body{max-width:none;background:#fff;}
+  .topbar,.nav,.btn,.btn-row,.rdoc-actions,.inv-action-row,.copy-toast,.modal,
+  .card-head,.loader,.mic-btn,.mic-hint,.field,.btn-outline,
+  #panel-customer,.cust-actions,.field-row,.tax-row{display:none !important;}
+  .panel{padding:0;display:block !important;}
+  .panel:not(.print-target){display:none !important;}
+  .card{border:none;box-shadow:none;margin:0;}
+  .rdoc,.est-result{border:none;margin:0;}
+  .rdoc.on,.est-result.on{display:block !important;}
+  .rdoc-topbar{background:#1c2f5e !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .rdoc-sec-label{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  pre{font-size:11pt !important;}
+  @page{margin:14mm;}
+}
+.print-only{display:none;}
+@media print{.print-only{display:block;}}
+
+/* ── ステータスバッジ（履歴用） ── */
+.htag.paid {background:#d1fae5;color:#065f46;border-color:#a7f3d0;}
+.htag.unpaid{background:#fef3c7;color:#92400e;border-color:#fde68a;}
+.htag.sent{background:#dbeafe;color:#1e40af;border-color:#bfdbfe;}
+
+/* ── トップバーアクション（設定アイコン） ── */
+.topbar-row{display:flex;align-items:center;justify-content:space-between;padding-bottom:10px;}
+.topbar-brand{padding-bottom:0;}
+.topbar-actions{display:flex;gap:2px;}
+.topbar-icon-btn{background:transparent;border:none;color:rgba(255,255,255,.7);cursor:pointer;
+  padding:6px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.topbar-icon-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
+.topbar-icon-btn svg{width:18px;height:18px;}
+.topbar-icon-btn .badge-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#ef4444;display:none;}
+.topbar-icon-btn.has-alert{position:relative;}
+.topbar-icon-btn.has-alert .badge-dot{display:block;}
+
+/* ── ダッシュボード ── */
+.dash-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.dash-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;}
+.dash-card.alert  {background:linear-gradient(135deg,#fef3c7,#fff7ed);border-color:#fde68a;}
+.dash-card.success{background:linear-gradient(135deg,#d1fae5,#ecfdf5);border-color:#a7f3d0;}
+.dash-card.primary{background:linear-gradient(135deg,#dbeafe,#eef3ff);border-color:#bfdbfe;}
+.dash-label{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.05em;margin-bottom:4px;}
+.dash-val{font-size:17px;font-weight:900;color:var(--navy);}
+.dash-val.danger {color:#b91c1c;}
+.dash-val.success{color:#065f46;}
+.dash-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ── 検索ボックス ── */
+.search-box{position:relative;margin-bottom:12px;}
+.search-box input{padding-left:34px;font-size:12.5px;}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted);pointer-events:none;}
+.search-box .search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px;display:none;}
+.search-box .search-clear.on{display:block;}
+
+/* ── 設定 ── */
+.settings-sec{margin-bottom:18px;}
+.settings-sec h4{font-size:11.5px;font-weight:900;color:var(--navy);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;}
+.settings-desc{font-size:11.5px;color:var(--muted);line-height:1.65;margin-bottom:10px;}
+.settings-btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+.settings-btn{flex:1;min-width:46%;padding:10px;font-size:12px;font-weight:700;border-radius:6px;
+  border:1px solid var(--border);background:var(--white);cursor:pointer;font-family:inherit;
+  color:var(--navy);transition:all .15s;}
+.settings-btn:hover{border-color:var(--navy);background:var(--off);}
+.settings-btn.danger{color:#b91c1c;border-color:#fecaca;}
+.settings-btn.danger:hover{background:#fee2e2;}
+.settings-btn.primary{background:linear-gradient(135deg,var(--navy),var(--navy-mid));color:#fff;border:none;}
+.settings-stat{display:flex;justify-content:space-between;padding:7px 0;font-size:12px;border-bottom:1px solid var(--border);}
+.settings-stat:last-child{border-bottom:none;}
+.settings-stat-label{color:var(--muted);}
+.settings-stat-val{font-weight:700;color:var(--ink);}
+.settings-stat-val.alert{color:#b91c1c;}
+
+/* ── 顧客詳細モーダル内の関連リスト ── */
+.linked-section{margin-top:14px;}
+.linked-head{font-size:11px;font-weight:900;color:var(--navy);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.linked-count{font-size:10.5px;color:var(--muted);background:var(--off);padding:2px 8px;border-radius:100px;font-weight:700;}
+.linked-item{background:var(--off);border-radius:6px;padding:9px 11px;margin-bottom:6px;font-size:11.5px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s;}
+.linked-item:hover{background:#eef3ff;}
+.linked-item-date{color:var(--muted);font-size:10.5px;}
+.linked-empty{font-size:11.5px;color:var(--muted);font-style:italic;text-align:center;padding:14px 0;}
+
+/* ── ファイル選択（隠し） ── */
+.file-input{display:none;}
+
+/* ── トースト（エラー用） ── */
+.copy-toast.err{background:#dc2626;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div class="topbar-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+      </svg>
+      <span>Miyagi′s　業務</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-icon-btn" id="settingsBtn" onclick="openSettings()" title="設定・データ管理">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="badge-dot"></span>
+      </button>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="switchPanel('report')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      日報
+    </button>
+    <button class="nav-btn" onclick="switchPanel('estimate')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      見積もり
+    </button>
+    <button class="nav-btn" onclick="switchPanel('invoice')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 13l2 2 4-4"/></svg>
+      請求書
+    </button>
+    <button class="nav-btn" onclick="switchPanel('customer')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      顧客
+    </button>
+    <button class="nav-btn" onclick="switchPanel('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      履歴
+    </button>
+  </nav>
+</div>
+
+<!-- ═══════════════════════
+     日報作成パネル
+═══════════════════════ -->
+<div class="panel active" id="panel-report">
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-head">
+      <div class="card-head-icon" style="background:#eef3ff;">📝</div>
+      <div><div class="card-head-title">日報メモ入力</div><div class="card-head-sub">殴り書きでOK — 整形はAIが行います</div></div>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label>現場・会社名（任意）</label>
+        <div class="field-with-picker">
+          <input type="text" id="reportSite" placeholder="例：〇〇新築現場 / ○○商事">
+          <button class="picker-btn" onclick="openCustomerPicker('report')">📇 顧客から</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>本日のメモ</label>
+        <div class="textarea-wrap">
+          <textarea id="reportInput" placeholder="例：午前 コンクリ打設 3名 完了&#10;午後 型枠の設置進めた&#10;暑かったから休憩多め&#10;1時間遅れた 明日養生確認"></textarea>
+          <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="音声入力">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          </button>
+        </div>
+        <div class="mic-hint" id="micHint">🎤 マイクボタンで音声入力できます</div>
+      </div>
+      <button class="btn btn-primary" id="reportBtn" onclick="generateReport()">日報を作成する</button>
+      <div class="loader" id="reportLoader"><div class="ldots"><i></i><i></i><i></i></div><p class="loader-msg">内容を解釈・整形しています…</p></div>
+    </div>
+  </div>
+
+  <div class="rdoc" id="rdoc">
+    <div class="rdoc-topbar">
+      <span>📄 作業日報</span>
+      <span class="rdoc-done">生成完了</span>
+    </div>
+    <div class="rdoc-meta">
+      <div class="rdoc-meta-cell"><span class="rmc-label">日付</span><span class="rmc-val" id="r-date">—</span></div>
+      <div class="rdoc-meta-cell"><span class="rmc-label">天気 / 気温</span><span class="rmc-val" id="r-weather">—</span></div>
+      <div class="rdoc-meta-cell"><span class="rmc-label">作業員</span><span class="rmc-val" id="r-workers">—</span></div>
+    </div>
+    <div class="rdoc-section">
+      <div class="rdoc-sec-label tasks">📋 本日の業務内容と成果</div>
+      <div class="rdoc-sec-body" id="r-tasks"></div>
+    </div>
+    <div class="rdoc-section">
+      <div class="rdoc-sec-label issues">⚠️ 発生した課題・気づき</div>
+      <div class="rdoc-sec-body" id="r-issues"></div>
+    </div>
+    <div class="rdoc-section" id="r-memo-section" style="display:none">
+      <div class="rdoc-sec-label memo">💬 特記事項・所感</div>
+      <div class="rdoc-sec-body" id="r-memo"></div>
+    </div>
+    <div class="rdoc-section">
+      <div class="rdoc-sec-label next">→ 明日の予定（Next Action）</div>
+      <div class="rdoc-sec-body" id="r-next"></div>
+    </div>
+    <div class="inv-action-row" style="padding-top:12px;padding-bottom:14px;background:var(--white);">
+      <button class="inv-action-btn" onclick="copyReport()">📋 コピー</button>
+      <button class="inv-action-btn" onclick="printDoc('panel-report')">🖨 PDF出力</button>
+      <button class="inv-action-btn paid-mark" onclick="saveReport()">💾 保存する</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════
+     見積もりパネル
+═══════════════════════ -->
+<div class="panel" id="panel-estimate">
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-icon" style="background:#fff7ed;">💴</div>
+      <div><div class="card-head-title">見積もり計算</div><div class="card-head-sub">工事・業務種別ごとに明細を追加</div></div>
+    </div>
+    <div class="card-body">
+
+      <div class="field">
+        <label>顧客・案件名（任意）</label>
+        <div class="field-with-picker">
+          <input type="text" id="estClient" placeholder="例：〇〇様 外壁塗装工事">
+          <button class="picker-btn" onclick="openCustomerPicker('estimate')">📇 顧客から</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>工事場所・現場（任意）</label>
+        <input type="text" id="estSite" placeholder="例：仙台市青葉区 〇〇">
+      </div>
+
+      <div id="itemList" class="item-list"></div>
+
+      <button class="btn btn-outline" onclick="addItem()" style="margin-bottom:14px;">＋ 明細を追加</button>
+
+      <div class="tax-row">
+        <span class="tax-label">消費税率</span>
+        <select class="tax-select" id="taxRate">
+          <option value="0.10" selected>10%</option>
+          <option value="0.08">8%（軽減税率）</option>
+          <option value="0">非課税</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>備考・条件（任意）</label>
+        <input type="text" id="estNote" placeholder="例：材料費は施主支給 / 足場別途">
+      </div>
+
+      <button class="btn btn-primary" id="estBtn" onclick="generateEstimate()">見積もりを計算する</button>
+      <div class="loader" id="estLoader"><div class="ldots"><i></i><i></i><i></i></div><p class="loader-msg">計算中…</p></div>
+    </div>
+  </div>
+
+  <div class="est-result" id="estResult">
+    <div class="card">
+      <div class="rdoc-topbar">
+        <span>💴 概算見積もり</span>
+        <span class="rdoc-done">計算完了</span>
+      </div>
+      <div style="padding:14px 16px 6px;">
+        <div id="estClientOut" style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:4px;"></div>
+        <div id="estSiteOut" style="font-size:11.5px;color:var(--muted);margin-bottom:14px;"></div>
+        <div class="est-line-head">
+          <span>項目</span><span style="text-align:right">数量</span><span style="text-align:right">金額（円）</span>
+        </div>
+        <div id="estLines"></div>
+        <div class="est-total-row sub">
+          <span class="est-total-label">小計</span>
+          <span class="est-total-val" id="estSubtotal"></span>
+        </div>
+        <div class="est-total-row">
+          <span class="est-total-label" id="estTaxLabel">消費税（10%）</span>
+          <span class="est-total-val" id="estTax"></span>
+        </div>
+        <div class="est-total-row grand">
+          <span class="est-total-label" style="font-weight:900;color:var(--navy);font-size:13px;">合計（税込）</span>
+          <span class="est-total-val" id="estTotal"></span>
+        </div>
+        <div id="estNoteOut" class="est-note" style="display:none;"></div>
+        <p class="est-note">※ AIによる概算です。材料・労務の市場単価は時期・地域により変動します。最終金額は担当者が確認・調整してください。</p>
+      </div>
+      <div class="inv-action-row" style="padding:0 16px 14px;">
+        <button class="inv-action-btn" onclick="copyEstimate()">📋 コピー</button>
+        <button class="inv-action-btn" onclick="printDoc('panel-estimate')">🖨 PDF出力</button>
+        <button class="inv-action-btn" onclick="convertToInvoice()">📄 請求書化</button>
+        <button class="inv-action-btn paid-mark" onclick="saveEstimate()">💾 保存する</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════
+     請求書パネル
+═══════════════════════ -->
+<div class="panel" id="panel-invoice">
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-icon" style="background:#e0e7ff;">📄</div>
+      <div><div class="card-head-title">請求書管理</div><div class="card-head-sub">見積もりから変換、入金ステータス管理</div></div>
+    </div>
+    <div class="card-body">
+      <p style="font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:14px;">
+        請求書は「見積もり」画面で見積もりを作成後、<strong style="color:var(--navy);">📄 請求書化</strong>ボタンから作成できます。<br>
+        既存の請求書はこの下に表示されます。
+      </p>
+      <button class="btn btn-outline" onclick="newInvoiceManual()">＋ 請求書を新規作成（手動）</button>
+    </div>
+  </div>
+
+  <div class="sec-label" style="margin-top:18px;">作成済み請求書</div>
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="invSearch" placeholder="顧客名・請求書No.で検索..." oninput="renderInvoices()">
+    <button class="search-clear" id="invSearchClear" onclick="document.getElementById('invSearch').value='';renderInvoices();">×</button>
+  </div>
+  <div id="invoiceList"></div>
+
+</div>
+
+<!-- ═══════════════════════
+     顧客マスタパネル
+═══════════════════════ -->
+<div class="panel" id="panel-customer">
+
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-icon" style="background:#dbeafe;">👥</div>
+      <div><div class="card-head-title">顧客・案件マスタ</div><div class="card-head-sub">登録した顧客を日報・見積もりで呼び出せます</div></div>
+    </div>
+    <div class="card-body">
+      <button class="btn btn-primary" onclick="openCustomerEdit()">＋ 新規顧客を登録</button>
+    </div>
+  </div>
+
+  <div class="sec-label" style="margin-top:18px;">登録済み顧客</div>
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="custSearch" placeholder="顧客名・担当者・住所で検索..." oninput="renderCustomers()">
+    <button class="search-clear" id="custSearchClear" onclick="document.getElementById('custSearch').value='';renderCustomers();">×</button>
+  </div>
+  <div id="customerList"></div>
+
+</div>
+
+<!-- ═══════════════════════
+     履歴パネル
+═══════════════════════ -->
+<div class="panel" id="panel-history">
+
+  <div id="histListWrap">
+    <div class="sec-label">業績ダッシュボード</div>
+    <div class="dash-strip" id="dashStrip"></div>
+
+    <div class="sec-label">保存済み日報・見積もり</div>
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="histSearch" placeholder="顧客名・現場名・内容で検索..." oninput="renderHistory()">
+      <button class="search-clear" id="histSearchClear" onclick="document.getElementById('histSearch').value='';renderHistory();">×</button>
+    </div>
+    <div id="histList"></div>
+  </div>
+
+  <div id="histDetail" style="display:none">
+    <button class="btn btn-outline" style="margin-bottom:14px;" onclick="closeHistDetail()">← 一覧に戻る</button>
+    <div class="card">
+      <div style="padding:14px 16px;" id="histDetailContent"></div>
+      <div style="padding:0 16px 14px;display:flex;gap:8px;">
+        <button class="btn btn-outline btn-sm" onclick="copyHistDetail()">コピー</button>
+        <button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;font-size:12px;font-weight:700;border-radius:6px;padding:8px 14px;" onclick="deleteHistItem()">削除</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="safe-bottom"></div>
+<div class="copy-toast" id="copyToast">コピーしました</div>
+
+<!-- 顧客選択モーダル（日報・見積もりから） -->
+<div class="modal" id="custPickerModal">
+  <div class="modal-content">
+    <div class="modal-head">
+      <span class="modal-title">📇 顧客を選択</span>
+      <button class="modal-close" onclick="closeModal('custPickerModal')">×</button>
+    </div>
+    <div class="modal-body" id="custPickerBody"></div>
+  </div>
+</div>
+
+<!-- 顧客 登録/編集 モーダル -->
+<div class="modal" id="custEditModal">
+  <div class="modal-content">
+    <div class="modal-head">
+      <span class="modal-title" id="custEditTitle">顧客を登録</span>
+      <button class="modal-close" onclick="closeModal('custEditModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="custEditId">
+      <div class="field"><label>顧客名・会社名（必須）</label><input type="text" id="custEditName" placeholder="例：株式会社〇〇 / 〇〇様邸"></div>
+      <div class="field"><label>担当者名（任意）</label><input type="text" id="custEditPerson" placeholder="例：田中部長"></div>
+      <div class="field"><label>住所・現場（任意）</label><input type="text" id="custEditAddress" placeholder="例：仙台市青葉区..."></div>
+      <div class="field"><label>連絡先（電話・メール 任意）</label><input type="text" id="custEditContact" placeholder="例：022-XXX-XXXX"></div>
+      <div class="field"><label>メモ（任意）</label><textarea id="custEditMemo" style="min-height:60px;" placeholder="例：支払いは月末締め翌月払い"></textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeModal('custEditModal')">キャンセル</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="saveCustomer()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 請求書詳細モーダル -->
+<div class="modal" id="invDetailModal">
+  <div class="modal-content">
+    <div class="modal-head">
+      <span class="modal-title">請求書詳細</span>
+      <button class="modal-close" onclick="closeModal('invDetailModal')">×</button>
+    </div>
+    <div class="modal-body" id="invDetailBody"></div>
+  </div>
+</div>
+
+<!-- 顧客詳細モーダル -->
+<div class="modal" id="custDetailModal">
+  <div class="modal-content">
+    <div class="modal-head">
+      <span class="modal-title" id="custDetailTitle">顧客詳細</span>
+      <button class="modal-close" onclick="closeModal('custDetailModal')">×</button>
+    </div>
+    <div class="modal-body" id="custDetailBody"></div>
+  </div>
+</div>
+
+<!-- 設定・データ管理モーダル -->
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <div class="modal-head">
+      <span class="modal-title">⚙️ 設定・データ管理</span>
+      <button class="modal-close" onclick="closeModal('settingsModal')">×</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="settings-sec">
+        <h4>📊 データの状況</h4>
+        <div id="settingsStats"></div>
+      </div>
+
+      <div class="settings-sec">
+        <h4>💾 バックアップ（書き出し）</h4>
+        <div class="settings-desc">全データ（顧客・日報・見積もり・請求書）を1つのJSONファイルとしてダウンロードします。<br>ブラウザのデータが消えても、このファイルから復元できます。<strong style="color:var(--navy);">定期的にバックアップを取ることを推奨します。</strong></div>
+        <div class="settings-btn-row">
+          <button class="settings-btn primary" onclick="exportAllData()">📥 全データをダウンロード</button>
+        </div>
+        <div id="lastBackupInfo" style="font-size:10.5px;color:var(--muted);margin-top:8px;text-align:center;"></div>
+      </div>
+
+      <div class="settings-sec">
+        <h4>📂 復元（読み込み）</h4>
+        <div class="settings-desc">過去にダウンロードしたバックアップJSONを読み込みます。<br><strong style="color:#b91c1c;">「上書き復元」を選ぶと現在のデータがすべて消えます。</strong></div>
+        <input type="file" id="restoreFile" class="file-input" accept=".json,application/json" onchange="handleRestoreFile(event)">
+        <div class="settings-btn-row">
+          <button class="settings-btn" onclick="document.getElementById('restoreFile').click();_restoreMode='merge';">➕ 追加マージ復元</button>
+          <button class="settings-btn danger" onclick="document.getElementById('restoreFile').click();_restoreMode='replace';">⚠ 上書き復元</button>
+        </div>
+      </div>
+
+      <div class="settings-sec">
+        <h4>🗑 データの削除</h4>
+        <div class="settings-desc">特定のカテゴリのデータを削除します。削除後は復元できません（バックアップから戻すのみ）。</div>
+        <div class="settings-btn-row">
+          <button class="settings-btn danger" onclick="clearCategory('hist','日報・見積もり')">日報・見積を削除</button>
+          <button class="settings-btn danger" onclick="clearCategory('invoices','請求書')">請求書を削除</button>
+          <button class="settings-btn danger" onclick="clearCategory('customers','顧客')">顧客を削除</button>
+          <button class="settings-btn danger" onclick="clearAllData()" style="min-width:100%;">⚠ すべて削除</button>
+        </div>
+      </div>
+
+      <div class="settings-sec">
+        <h4>ℹ️ アプリ情報</h4>
+        <div class="settings-stat"><span class="settings-stat-label">バージョン</span><span class="settings-stat-val">1.0.0-beta</span></div>
+        <div class="settings-stat"><span class="settings-stat-label">データ保存先</span><span class="settings-stat-val">ブラウザ（localStorage）</span></div>
+        <div class="settings-stat"><span class="settings-stat-label">音声入力</span><span class="settings-stat-val" id="voiceSupportInfo">確認中...</span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 印刷用エリア（@media printでこれだけ出る） -->
+<div id="printArea" style="display:none;"></div>
+
+<script>
+/* ════════════════════
+   パネル切り替え
+════════════════════ */
+function switchPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  const idx = {report:0, estimate:1, invoice:2, customer:3, history:4}[id];
+  document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  if (id === 'history')  renderHistory();
+  if (id === 'customer') renderCustomers();
+  if (id === 'invoice')  renderInvoices();
+}
+
+/* ════════════════════
+   日報生成ロジック
+════════════════════ */
+function detectDomain(raw) {
+  if (/型枠|コンクリ|打設|基礎|鉄筋|外壁|屋根|養生|足場|解体|土工|掘削|埋戻|舗装|配管|電気工事|施工|現場.*作業員|作業員.*現場/.test(raw)) return 'construction';
+  if (/バグ|デプロイ|リリース|コード|API|システム開発|テスト|エラー修正|サーバー|データベース/.test(raw)) return 'tech';
+  if (/見積もり|請求書|商談|顧客訪問|営業|提案書|受注|発注|契約/.test(raw)) return 'office';
+  return 'general';
+}
+
+const HUMAN_PAT = /暑(い|かった|すぎ)|寒(い|かった)|熱中症|日差し|ありがとう|感謝|助かった|職人さん|ベテラン職人|みんな頑張|よく頑張|すごかっ|いい現場|良い現場|休憩(増やし|多め|たっぷり)|ちょっと休ん|疲れた|しんどかった|きつかった|へとへと|つらかった/;
+
+function buildTaskSentence(text, period, domain, raw) {
+  const t = text.trim();
+  const p = period === 'am' ? '午前中' : period === 'pm' ? '午後' : null;
+  const prefix = p ? `${p}、` : '';
+  const isDone    = /完了|終了|終わり?(?:まし)?た|仕上がり?(?:まし)?た|済み|できた|終えた|なんとか/.test(t);
+  const isWaiting = /待ち|待機|保留|確認中|回答待ち|連絡待ち/.test(t);
+  const nm = raw.match(/(\d+)\s*(名|人)\b/);
+  const wSuffix = nm ? `（作業員${nm[1]}名）` : '';
+
+  if (domain === 'construction') {
+    if (/打設|コンクリ/.test(t)) return isDone ? `${prefix}コンクリート打設を完了し、養生フェーズへ移行${wSuffix}` : `${prefix}コンクリート打設作業を進めた${wSuffix}`;
+    if (/型枠/.test(t))          return isDone ? `${prefix}型枠の設置・固定を終えた${wSuffix}` : `${prefix}型枠の設置を進めた${wSuffix}`;
+    if (/基礎/.test(t))          return isDone ? `${prefix}基礎工事の所定工程を完了した${wSuffix}` : `${prefix}基礎工事を進めた${wSuffix}`;
+    if (/鉄筋|配筋/.test(t))     return isDone ? `${prefix}鉄筋組み・配筋作業を仕上げた${wSuffix}` : `${prefix}鉄筋組み・配筋作業を進めた${wSuffix}`;
+    if (/養生/.test(t))          return isDone ? `${prefix}養生シートの設置・固定を終えた${wSuffix}` : `${prefix}養生処置を行った${wSuffix}`;
+    if (/足場/.test(t))          return isDone ? `${prefix}足場を組み上げ、安全点検まで完了した${wSuffix}` : `${prefix}足場の設置・安全点検を進めた${wSuffix}`;
+    if (/解体/.test(t))          return isDone ? `${prefix}解体作業の所定範囲を終えた${wSuffix}` : `${prefix}解体作業を進めた${wSuffix}`;
+    if (/外壁|塗装/.test(t))     return isDone ? `${prefix}外壁・塗装工事の所定範囲を仕上げた${wSuffix}` : `${prefix}外壁・塗装工事を進めた${wSuffix}`;
+    if (/掘削|埋戻|土工/.test(t))return isDone ? `${prefix}掘削・埋戻し作業を終えた${wSuffix}` : `${prefix}土工作業を進めた${wSuffix}`;
+    if (/配管|設備/.test(t))     return isDone ? `${prefix}設備配管工事の所定範囲を完了した${wSuffix}` : `${prefix}設備配管工事を進めた${wSuffix}`;
+    if (/KY|危険予知|朝礼/.test(t)) return `${prefix}KY活動・安全確認ミーティングを行った${wSuffix}`;
+    if (/資材|材料|搬入|搬出/.test(t)) return isDone ? `${prefix}資材の搬入・整理を終えた${wSuffix}` : `${prefix}資材の搬入・現場段取りを行った${wSuffix}`;
+    if (/片付け|清掃|整理/.test(t)) return isDone ? `${prefix}現場の片付け・整理整頓を終えた${wSuffix}` : `${prefix}現場清掃・片付けを行った${wSuffix}`;
+    if (/打ち合わせ|MTG|監督/.test(t)) return `${prefix}施工内容・工程について現場監督と打ち合わせを行った`;
+    if (/検査|点検/.test(t))     return isDone ? `${prefix}施工状況の確認・品質点検を終えた${wSuffix}` : `${prefix}施工状況の確認・品質点検を行った${wSuffix}`;
+    if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の承認・指示を待った`;
+    const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
+    return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}${wSuffix}`;
+  }
+
+  if (domain === 'tech') {
+    if (/バグ|不具合|エラー/.test(t)) { const loc = t.match(/([^\s]{2,10}(?:画面|機能|API|モジュール))/); const l = loc ? `${loc[1]}の` : ''; return isDone ? `${prefix}${l}不具合を修正し、動作確認まで完了した` : `${prefix}${l}不具合の原因を調査・切り分けた`; }
+    if (/デプロイ|リリース/.test(t)) return isDone ? `${prefix}本番環境へのデプロイを完了し、動作確認まで行った` : `${prefix}リリース作業の準備・手順確認を進めた`;
+    if (/テスト|検証/.test(t))       return isDone ? `${prefix}動作テスト・品質検証を終えた` : `${prefix}動作テスト・検証を進めた`;
+    if (/打ち合わせ|MTG/.test(t))    return `${prefix}チーム内での仕様確認・方針共有の打ち合わせを行った`;
+    if (/レビュー/.test(t))          return isDone ? `${prefix}コードレビューを完了し、指摘事項を修正した` : `${prefix}コードレビューに対応した`;
+    if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の承認を待った`;
+    const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
+    return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}`;
+  }
+
+  if (domain === 'office') {
+    if (/見積もり|見積/.test(t)) return isWaiting ? `${prefix}見積書を作成・提出し、先方の確認回答を待っている` : isDone ? `${prefix}見積書の作成・提出を終えた` : `${prefix}見積書の作成・条件整理を進めた`;
+    if (/請求書|発注書/.test(t)) return isDone ? `${prefix}請求書・発注書の作成・送付を終えた` : `${prefix}請求書・発注書の作成を進めた`;
+    if (/商談|提案|営業/.test(t)) return isDone ? `${prefix}顧客への提案・商談を行い、内容を整理した` : `${prefix}顧客訪問・商談対応を行った`;
+    if (/打ち合わせ|MTG|会議/.test(t)) return `${prefix}関係者との打ち合わせで課題・方針を共有した`;
+    if (/書類|資料|ドキュメント/.test(t)) return isDone ? `${prefix}必要書類・資料の整備を終えた` : `${prefix}業務書類・資料の作成・整理を進めた`;
+    if (/電話|問い合わせ|顧客対応/.test(t)) return isDone ? `${prefix}顧客からの問い合わせに対応し、回答まで完了した` : `${prefix}顧客への連絡・問い合わせ対応を行った`;
+    if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の回答・確認を待った`;
+    const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
+    return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}`;
+  }
+
+  if (/打ち合わせ|MTG|ミーティング/.test(t)) return `${prefix}関係者との打ち合わせ・情報共有を行った`;
+  if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の確認・回答を待った`;
+  const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
+  return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}`;
+}
+
+function buildIssue(seg, domain, raw) {
+  const delayM = raw.match(/([1-9]\d*|[一二三四五六七八九十]+)\s*(時間|分)\s*(遅れ|遅延|押し?|ロス)/);
+  const delayStr = delayM ? `${delayM[1]}${delayM[2]}` : null;
+  const workM = raw.match(/(型枠|コンクリート?|打設|基礎|鉄筋|養生|足場|掘削|配管|外壁|バグ|デプロイ|見積もり|見積)/);
+  const workStr = workM ? workM[1] : null;
+
+  if (/遅れ|遅延|押してる?|予定より/.test(seg)) {
+    if (delayStr && workStr) return `${workStr}工程で${delayStr}の遅延が発生。後工程への影響範囲を確認し、必要に応じて元請けへ進捗を報告する必要がある`;
+    if (delayStr) return `作業工程に${delayStr}の遅延が発生。後工程への影響と挽回策を翌日朝に関係者と確認する必要がある`;
+    if (workStr) return `${workStr}工程が計画より遅れている。後工程の段取りへの影響を再確認し、必要であれば工程調整を行う`;
+    return '作業進捗が計画を下回っている。遅延の原因特定と後工程への影響確認が必要な状況';
+  }
+  if (/進まない|はかどらない|詰まった|手間取/.test(seg)) {
+    return workStr ? `${workStr}の作業が想定以上に手間取っている。原因を特定し翌日の対応策を決める必要がある` : '作業の進捗が計画を下回っている。ボトルネックの原因を特定し、翌日の優先対応を整理する';
+  }
+  if (/ミス|失敗|間違え|やり直し/.test(seg)) {
+    const itemM = raw.match(/([^\s]{2,10})(のやり直し|ミス|間違え)/);
+    return itemM ? `${itemM[1]}に誤りが発生し再作業となった。確認フローの見直しと再発防止策が必要` : '作業上の誤りが発生し修正・再作業が必要となった。手順確認プロセスの見直しを検討する';
+  }
+  if (/怒られ|叱られ|注意され|指摘(され|を受)/.test(seg)) return '上長・元請けより改善点について指摘を受けた。指摘内容を整理し、具体的な改善策と報告タイミングを確認する';
+  if (/返事(ない|来ない|待ち)|連絡(ない|来ない)|回答待ち/.test(seg)) {
+    const waitM = raw.match(/([^\s]{2,8})(の返事|の回答|から連絡)/);
+    return `${waitM ? waitM[1] : '先方'}からの回答が未達で進捗が滞っている。翌日業務開始時にフォローアップ連絡を行い、意思決定の遅れを防ぐ`;
+  }
+  if (/わからない|理解できない|迷った|判断できな/.test(seg)) return '業務判断に必要な情報・基準が不明確な状況が発生した。上長または関係者への早急な確認が必要';
+  if (/悪天候|ぬかるみ|雨.*現場|現場.*雨/.test(seg)) return '悪天候により作業効率と安全性が低下した。翌日の天候を確認し、安全を最優先に工程調整を行う';
+  if (/うざい|めんどう|面倒|やってられ/.test(seg)) return '当該作業のプロセスに非効率な箇所がある可能性がある。業務フローの改善余地を上長と相談する';
+  if (/最悪|ひどい|散々|ぐちゃぐちゃ/.test(seg)) return '複数の問題が重なった一日となった。環境・リスク要因を整理し、翌日への影響と再発防止を確認する';
+  return null;
+}
+
+function buildMemoItems(raw, domain) {
+  const items = [];
+  if (/暑(い|かった|すぎ)|熱中症|日差し/.test(raw)) {
+    items.push(/休憩(増やし|多め|たっぷり)|ちょっと休ん/.test(raw)
+      ? '気温が高く、熱中症対策として休憩を適宜増やしながら作業を進めた。安全を優先した判断として記録する'
+      : '本日は気温が高く体への負担が大きかった。水分補給・日陰での休憩をとりながら対応した');
+  } else if (/寒(い|かった)/.test(raw)) {
+    items.push('気温が低く、防寒対策をとりながらの作業となった。体調管理に注意しながら進めた');
+  }
+  if (/職人さん|ベテラン職人/.test(raw) && /ありがとう|感謝|助かった|すごかっ/.test(raw)) {
+    items.push('職人の方々の丁寧な仕事ぶりと現場対応に助けられた。チームとして良い連携ができた一日だった');
+  } else if (/ありがとう|感謝|助かった/.test(raw)) {
+    items.push('メンバー・関係者の協力があって進められた場面があった。連携がうまく取れた一日として記録しておく');
+  }
+  if (/疲れた|しんどかった|きつかった|へとへと|つらかった/.test(raw)) {
+    if (!items.some(i => i.includes('負担') || i.includes('休憩'))) {
+      items.push('作業負荷が高い一日だった。翌日のパフォーマンスへの影響も考慮し、十分な休養をとることが望ましい');
+    }
+  }
+  if (/いい現場|良い現場|みんな頑張|よく頑張/.test(raw) && !items.some(i => i.includes('チーム'))) {
+    items.push('全体的にスムーズな一日だった。チームの動きと連携が今日の進捗を支えた');
+  }
+  return items;
+}
+
+function buildNextActions(raw, domain) {
+  const actions = [];
+  const delayM = raw.match(/([1-9]\d*)\s*(時間|分)\s*(遅れ|遅延)/);
+  const workM  = raw.match(/(型枠|コンクリート?|打設|基礎|鉄筋|養生|足場|掘削|配管|外壁)/);
+  if (delayM) actions.push(`${workM ? workM[1] : '作業'}の${delayM[1]}${delayM[2]}遅延について、翌工程の監督者・元請けへ進捗を報告し工程調整の可否を確認する`);
+  if (/返事待ち|回答待ち|連絡待ち|先方.*確認中/.test(raw)) {
+    const wM2 = raw.match(/([^\s]{2,8})(の返事|の回答|から連絡|への連絡)/);
+    actions.push(`${wM2 ? wM2[1] : '先方'}へ翌朝フォローアップ連絡を行い、意思決定を促す`);
+  }
+  if (/コンクリ|打設/.test(raw) && domain === 'construction' && !actions.some(a=>a.includes('養生'))) {
+    actions.push('翌日朝にコンクリートの養生・硬化状況を確認し、強度が確保されてから次工程へ進む');
+  }
+  if (/バグ|不具合|エラー/.test(raw) && domain === 'tech' && !actions.some(a=>a.includes('テスト'))) {
+    actions.push('修正内容の追加テスト・影響範囲確認を完了させ、問題がなければリリース判断を行う');
+  }
+  if (/見積もり|提案書/.test(raw) && /待ち|待機|回答/.test(raw) && !actions.some(a=>a.includes('見積'))) {
+    actions.push('提出済み見積もり・提案書について先方の確認状況をフォローし、修正依頼への対応準備を整える');
+  }
+  const tomM = raw.match(/明日[はにも]?\s*([^\n。、！？]{4,20})/);
+  if (tomM && actions.length < 2) actions.push(`明日の${tomM[1].trim()}について、必要な資材・人員・段取りを事前に確認する`);
+  if (actions.length === 0) {
+    const defaults = { construction:'翌日の工程に必要な資材・機材と作業員の配置を朝礼前に確認する', tech:'本日の作業内容をタスク管理ツールに反映し、翌日対応のプライオリティを整理する', office:'本日の商談・打ち合わせ内容を整理し、フォローアップが必要な案件を優先度順に洗い出す', general:'本日の進捗を踏まえ、翌日対応が必要な案件の優先順位を確認する' };
+    actions.push(defaults[domain]);
+  }
+  return actions.slice(0, 2);
+}
+
+let _lastRawReport = '';
+let _lastReportText = '';
+
+function generateReport() {
+  const raw = document.getElementById('reportInput').value.trim();
+  if (!raw) { const el = document.getElementById('reportInput'); el.focus(); el.style.borderColor='#e05252'; setTimeout(()=>{el.style.borderColor='';},1500); return; }
+  _lastRawReport = raw;
+  const btn=document.getElementById('reportBtn'), loader=document.getElementById('reportLoader'), doc=document.getElementById('rdoc');
+  btn.disabled=true; doc.classList.remove('on'); loader.classList.add('on');
+  setTimeout(()=>{ loader.classList.remove('on'); fillReport(raw); doc.classList.add('on'); btn.disabled=false; }, 1900);
+}
+
+function fillReport(raw) {
+  const d = new Date();
+  const DAY = ['日','月','火','水','木','金','土'];
+  document.getElementById('r-date').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${DAY[d.getDay()]}）`;
+
+  const wm = raw.match(/(晴れ|快晴|曇り|曇|小雨|雨|大雨|雪|霙|強風)/);
+  const tm = raw.match(/(\d+)\s*[°℃度]/);
+  const nm = raw.match(/(\d+)\s*(名|人)\b/);
+  const weather = wm ? wm[1] : null;
+  const wIcon = !weather?'—': weather.includes('雨')||weather.includes('霙')?'🌧': weather.includes('雪')?'❄️': weather.includes('曇')?'☁️':'☀️';
+  document.getElementById('r-weather').textContent = weather ? `${wIcon} ${weather}${tm ? ' / '+tm[1]+'℃' : ''}` : '記載なし';
+
+  let workers = nm ? nm[1]+'名' : null;
+  if (!workers) { const names = [...raw.matchAll(/([^\s]{1,4})(さん|君|氏|くん)/g)].map(m=>m[1]); workers = names.length>0 ? `${names.length}名（${names.join('・')}）` : '記載なし'; }
+  document.getElementById('r-workers').textContent = workers;
+
+  const domain = detectDomain(raw);
+  const segs = raw.replace(/[！!？?。]/g,'\n').split('\n').map(s=>s.trim()).filter(s=>s.length>1);
+  const rawTasks = [], issueSegs = [];
+  const SKIP_PAT = /^(暑|寒|熱中症|ありがとう|感謝|助かっ|職人さん|ベテラン|みんな|お疲れ|休憩(増やし|多め|たっぷり)|ちょっと休ん|へとへと|疲れた|しんどかっ|つらかっ|きつかっ)/;
+  const ISSUE_PAT = /遅れ|遅延|押してる?|進まない|はかどらない|詰まった|手間取|ミス|失敗|間違え|やり直し|怒られ|叱られ|注意され|指摘(され|を受)|返事(ない|来ない|待ち)|連絡(ない|来ない)|回答待ち|わからない|判断できな|悪天候|ぬかるみ|最悪|ひどい|散々/;
+  let period = null;
+
+  for (const seg of segs) {
+    if (/^(午前|朝|AM)\s/i.test(seg)) period = 'am';
+    else if (/^(午後|昼|夕方|PM)\s/i.test(seg)) period = 'pm';
+    if (ISSUE_PAT.test(seg)) issueSegs.push(seg);
+    if (/^(天気|気温|現場|工事名?|作業員|人員)[：:]/i.test(seg)) continue;
+    if (wm && tm && seg.includes(wm[1]) && seg.includes(tm[1]) && seg.length<16) continue;
+    if (SKIP_PAT.test(seg)) continue;
+    if (HUMAN_PAT.test(seg) && !/型枠|コンクリ|打設|基礎|鉄筋|養生|足場|解体|掘削|配管|外壁|バグ|デプロイ|テスト|見積もり|打ち合わせ/.test(seg)) continue;
+    if (seg.length < 2) continue;
+    const clean = seg.replace(/^(午前中?|午後|朝|夕方|昼|AM|PM)\s*/i,'').replace(/\d+\s*(名|人)\s*(で|と|にて)?/g,'').replace(/(晴れ|快晴|曇り|曇|小雨|雨|大雨|雪|霙|強風)/g,'').replace(/気温\d+[°℃度]/,'').replace(/\d+[°℃度]/,'').replace(/^\s*[ー\-→•・▸]\s*/,'').trim();
+    if (clean.length < 2) continue;
+    rawTasks.push({ text: clean, period });
+  }
+
+  const seen = new Set();
+  const taskItems = rawTasks.filter(t=>{ const k=t.text; if(seen.has(k))return false; seen.add(k); return true; }).map(t=>buildTaskSentence(t.text,t.period,domain,raw));
+  const issueItems = []; const issueSeen = new Set();
+  for (const seg of issueSegs) { const s=buildIssue(seg,domain,raw); if(s&&!issueSeen.has(s)){issueItems.push(s);issueSeen.add(s);} }
+  const memoItems = buildMemoItems(raw, domain);
+  const nextItems = buildNextActions(raw, domain);
+
+  const mkItem = (text, type) => `<div class="rdoc-item ${type}"><span class="rdoc-item-bullet">${type==='action'?'→':'▸'}</span><span class="rdoc-item-text">${text}</span></div>`;
+  document.getElementById('r-tasks').innerHTML = taskItems.length>0 ? taskItems.map(t=>mkItem(t,'task')).join('') : `<div class="rdoc-empty">作業内容を読み取れませんでした</div>`;
+  document.getElementById('r-issues').innerHTML = issueItems.length>0 ? issueItems.map(t=>mkItem(t,'issue')).join('') : `<div class="rdoc-empty">特筆すべき課題は確認されませんでした</div>`;
+  const memoSec = document.getElementById('r-memo-section');
+  if (memoItems.length>0) { document.getElementById('r-memo').innerHTML = memoItems.map(t=>mkItem(t,'memo')).join(''); memoSec.style.display=''; } else { memoSec.style.display='none'; }
+  document.getElementById('r-next').innerHTML = nextItems.map(t=>mkItem(t,'action')).join('');
+
+  /* テキスト化してコピー用に保持 */
+  const site = document.getElementById('reportSite').value.trim();
+  const date = document.getElementById('r-date').textContent;
+  const parts = [`【作業日報】${date}${site?' / '+site:''}`,''];
+  if (taskItems.length) { parts.push('■ 本日の業務内容と成果'); taskItems.forEach(t=>parts.push('  ▸ '+t)); parts.push(''); }
+  if (issueItems.length) { parts.push('■ 発生した課題・気づき'); issueItems.forEach(t=>parts.push('  ▸ '+t)); parts.push(''); }
+  if (memoItems.length)  { parts.push('■ 特記事項・所感'); memoItems.forEach(t=>parts.push('  ▸ '+t)); parts.push(''); }
+  parts.push('■ 明日の予定（Next Action）'); nextItems.forEach(t=>parts.push('  → '+t));
+  _lastReportText = parts.join('\n');
+}
+
+function copyReport() { navigator.clipboard.writeText(_lastReportText).then(()=>showToast()); }
+
+function saveReport() {
+  if (!_lastReportText) return;
+  const site = document.getElementById('reportSite').value.trim();
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  hist.unshift({ type:'report', date: new Date().toISOString(), site, raw: _lastRawReport, text: _lastReportText });
+  localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,100)));
+  showToast('保存しました');
+}
+
+/* ════════════════════
+   見積もりロジック
+════════════════════ */
+const WORK_TYPES = [
+  { key:'concrete',  label:'コンクリート打設',          unit:'m³',  materialUnit:18000, laborUnit:12000 },
+  { key:'formwork',  label:'型枠工事',                  unit:'m²',  materialUnit:3500,  laborUnit:4500  },
+  { key:'rebar',     label:'鉄筋工事',                  unit:'t',   materialUnit:90000, laborUnit:40000 },
+  { key:'foundation',label:'基礎工事',                  unit:'式',  materialUnit:150000,laborUnit:120000 },
+  { key:'scaffold',  label:'足場設置・撤去',            unit:'m²',  materialUnit:700,   laborUnit:600   },
+  { key:'demolish',  label:'解体工事',                  unit:'m²',  materialUnit:3000,  laborUnit:8000  },
+  { key:'exterior',  label:'外壁塗装',                  unit:'m²',  materialUnit:1800,  laborUnit:2200  },
+  { key:'roofing',   label:'屋根工事',                  unit:'m²',  materialUnit:8000,  laborUnit:5000  },
+  { key:'plumbing',  label:'給排水設備工事',            unit:'式',  materialUnit:200000,laborUnit:150000 },
+  { key:'electric',  label:'電気工事',                  unit:'式',  materialUnit:120000,laborUnit:80000 },
+  { key:'earthwork', label:'土工（掘削・埋戻し）',      unit:'m³',  materialUnit:1500,  laborUnit:3500  },
+  { key:'paving',    label:'舗装工事',                  unit:'m²',  materialUnit:4000,  laborUnit:3000  },
+  { key:'interior',  label:'内装工事（クロス・床）',    unit:'m²',  materialUnit:3000,  laborUnit:4000  },
+  { key:'cleanup',   label:'建設廃棄物処理・清掃',      unit:'m²',  materialUnit:500,   laborUnit:800   },
+  { key:'daily_rep', label:'日報・書類作成（月額換算）',unit:'件/月',materialUnit:0,     laborUnit:12000 },
+  { key:'estimate',  label:'見積もり作成代行（件）',     unit:'件',  materialUnit:0,     laborUnit:8000  },
+  { key:'custom',    label:'その他（金額直接入力）',    unit:'式',  materialUnit:0,     laborUnit:0     },
+];
+
+let itemCount = 0;
+
+function buildWorkTypeOptions() {
+  return WORK_TYPES.map(w=>`<option value="${w.key}">${w.label}（単位：${w.unit}）</option>`).join('');
+}
+
+function addItem() {
+  itemCount++;
+  const id = itemCount;
+  const div = document.createElement('div');
+  div.className = 'item-entry';
+  div.id = `item-${id}`;
+  div.innerHTML = `
+    <div class="item-entry-head"><span class="item-entry-num">明細 ${id}</span><button class="item-del" onclick="removeItem(${id})">×</button></div>
+    <div class="field"><label>工事・業務種別</label>
+      <select id="itype-${id}" onchange="onTypeChange(${id})"><option value="">— 選択 —</option>${buildWorkTypeOptions()}</select>
+    </div>
+    <div class="field-row" id="irow-${id}">
+      <div class="field"><label>数量</label><input type="number" id="iqty-${id}" placeholder="例：10" min="0" step="0.1"></div>
+      <div class="field"><label id="iunit-label-${id}">単位あたり金額（円）</label><input type="number" id="iamt-${id}" placeholder="自動入力" min="0"></div>
+    </div>
+    <div class="field" id="icustom-${id}" style="display:none"><label>金額（円）直接入力</label><input type="number" id="icustomamt-${id}" placeholder="例：150000" min="0"></div>
+    <div class="field"><label>摘要・メモ（任意）</label><input type="text" id="imemo-${id}" placeholder="例：3階部分のみ / 材料費含む"></div>`;
+  document.getElementById('itemList').appendChild(div);
+}
+
+function onTypeChange(id) {
+  const key = document.getElementById(`itype-${id}`).value;
+  const w = WORK_TYPES.find(w=>w.key===key);
+  if (!w) return;
+  const isCustom = key === 'custom';
+  document.getElementById(`irow-${id}`).style.display = isCustom ? 'none' : '';
+  document.getElementById(`icustom-${id}`).style.display = isCustom ? '' : 'none';
+  if (!isCustom) {
+    document.getElementById(`iunit-label-${id}`).textContent = `単位（${w.unit}）あたり合計（円）`;
+    document.getElementById(`iamt-${id}`).value = w.materialUnit + w.laborUnit || '';
+  }
+}
+
+function removeItem(id) { const el = document.getElementById(`item-${id}`); if (el) el.remove(); }
+
+let _lastEstText = '';
+
+function generateEstimate() {
+  const entries = document.querySelectorAll('.item-entry');
+  if (entries.length === 0) { alert('明細を1件以上追加してください'); return; }
+
+  const lines = [];
+  let subtotal = 0;
+  for (const entry of entries) {
+    const id = entry.id.replace('item-','');
+    const key  = document.getElementById(`itype-${id}`).value;
+    if (!key) continue;
+    const w = WORK_TYPES.find(w=>w.key===key);
+    if (!w) continue;
+    const memo = document.getElementById(`imemo-${id}`).value.trim();
+    let amt = 0;
+    if (key === 'custom') {
+      amt = parseInt(document.getElementById(`icustomamt-${id}`).value) || 0;
+      lines.push({ name: memo || 'その他', qty:'—', amt });
+    } else {
+      const qty = parseFloat(document.getElementById(`iqty-${id}`).value) || 0;
+      const unitAmt = parseInt(document.getElementById(`iamt-${id}`).value) || (w.materialUnit + w.laborUnit);
+      amt = Math.round(qty * unitAmt);
+      lines.push({ name: `${w.label}${memo?' ('+memo+')':''}`, qty:`${qty} ${w.unit}`, amt });
+    }
+    subtotal += amt;
+  }
+
+  if (lines.length === 0) { alert('有効な明細が見つかりません'); return; }
+
+  const taxRate = parseFloat(document.getElementById('taxRate').value);
+  const tax     = Math.round(subtotal * taxRate);
+  const total   = subtotal + tax;
+  const taxLabel= taxRate === 0 ? '消費税（非課税）' : taxRate === 0.08 ? '消費税（8%）' : '消費税（10%）';
+
+  const btn=document.getElementById('estBtn'), loader=document.getElementById('estLoader'), result=document.getElementById('estResult');
+  btn.disabled=true; result.classList.remove('on'); loader.classList.add('on');
+
+  setTimeout(()=>{
+    loader.classList.remove('on');
+    const client = document.getElementById('estClient').value.trim();
+    const site   = document.getElementById('estSite').value.trim();
+    const note   = document.getElementById('estNote').value.trim();
+
+    document.getElementById('estClientOut').textContent = client || '案件名未記入';
+    document.getElementById('estSiteOut').textContent   = site   || '';
+    document.getElementById('estLines').innerHTML = lines.map(l=>`
+      <div class="est-line">
+        <div class="est-line-name">${l.name}</div>
+        <div class="est-line-qty">${l.qty}</div>
+        <div class="est-line-amt">¥${l.amt.toLocaleString()}</div>
+      </div>`).join('');
+    document.getElementById('estSubtotal').textContent = '¥'+subtotal.toLocaleString();
+    document.getElementById('estTaxLabel').textContent = taxLabel;
+    document.getElementById('estTax').textContent      = '¥'+tax.toLocaleString();
+    document.getElementById('estTotal').textContent    = '¥'+total.toLocaleString();
+    const noteEl = document.getElementById('estNoteOut');
+    if (note) { noteEl.textContent = '【備考】'+note; noteEl.style.display=''; } else { noteEl.style.display='none'; }
+
+    result.classList.add('on');
+    btn.disabled = false;
+
+    /* テキスト化 */
+    const d = new Date();
+    const txt = [
+      `【概算見積もり】${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`,
+      client ? `案件名：${client}` : '', site ? `現場：${site}` : '', '',
+      '項目　／　数量　／　金額',
+      ...lines.map(l=>`${l.name} ／ ${l.qty} ／ ¥${l.amt.toLocaleString()}`),
+      '',`小計：¥${subtotal.toLocaleString()}`,`${taxLabel}：¥${tax.toLocaleString()}`,`合計（税込）：¥${total.toLocaleString()}`,
+      note ? '\n備考：'+note : '',
+      '\n※ AIによる概算です。最終金額は担当者が確認・調整してください。',
+    ].filter(l=>l!==null).join('\n');
+    _lastEstText = txt;
+  }, 1200);
+}
+
+function copyEstimate() { navigator.clipboard.writeText(_lastEstText).then(()=>showToast()); }
+
+function saveEstimate() {
+  if (!_lastEstText) return;
+  const client = document.getElementById('estClient').value.trim();
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  hist.unshift({ type:'estimate', date: new Date().toISOString(), client, text: _lastEstText });
+  localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,100)));
+  showToast('保存しました');
+}
+
+/* ════════════════════
+   履歴
+════════════════════ */
+let _currentHistIdx = -1;
+
+function renderHistory() {
+  document.getElementById('histDetail').style.display = 'none';
+  const list = document.getElementById('histList');
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  if (hist.length === 0) { list.innerHTML = '<div class="hist-empty">保存済みのデータがありません。<br>日報や見積もりを作成して「保存する」を押してください。</div>'; return; }
+  list.innerHTML = hist.map((h,i)=>{
+    const d = new Date(h.date);
+    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const preview = h.text.split('\n').filter(l=>l.trim()&&!l.startsWith('【')).slice(0,2).join(' ');
+    const tag = h.type === 'report' ? '日報' : '見積もり';
+    const name = h.site || h.client || '—';
+    return `<div class="hist-item" onclick="openHistDetail(${i})">
+      <div class="hist-item-date">${dateStr}</div>
+      <div class="hist-item-preview">${name} — ${preview.slice(0,40)}…</div>
+      <div class="hist-item-tags"><span class="htag">${tag}</span>${name!=='—'?`<span class="htag">${name}</span>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function openHistDetail(idx) {
+  _currentHistIdx = idx;
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const h = hist[idx];
+  document.getElementById('histDetail').style.display = '';
+  document.getElementById('histList').style.display = 'none';
+  document.getElementById('histDetailContent').innerHTML = `<pre style="white-space:pre-wrap;font-size:12.5px;line-height:1.75;font-family:inherit;color:var(--ink);">${h.text}</pre>`;
+}
+
+function closeHistDetail() {
+  document.getElementById('histDetail').style.display = 'none';
+  document.getElementById('histList').style.display = '';
+}
+
+function copyHistDetail() {
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  navigator.clipboard.writeText(hist[_currentHistIdx].text).then(()=>showToast());
+}
+
+function deleteHistItem() {
+  if (!confirm('この記録を削除しますか？')) return;
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  hist.splice(_currentHistIdx, 1);
+  localStorage.setItem('mgyb_hist', JSON.stringify(hist));
+  closeHistDetail();
+  renderHistory();
+}
+
+/* ════════════════════
+   ユーティリティ
+════════════════════ */
+function showToast(msg='コピーしました') {
+  const t = document.getElementById('copyToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+/* ════════════════════
+   顧客マスタ
+════════════════════ */
+function loadCustomers() { return JSON.parse(localStorage.getItem('mgyb_customers')||'[]'); }
+function saveCustomers(arr) { localStorage.setItem('mgyb_customers', JSON.stringify(arr)); }
+
+function renderCustomers() {
+  const list = document.getElementById('customerList');
+  const arr = loadCustomers();
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="cust-empty">登録済みの顧客がありません。<br>「＋ 新規顧客を登録」から追加してください。</div>';
+    return;
+  }
+  list.innerHTML = arr.map(c => `
+    <div class="cust-item">
+      <div class="cust-info">
+        <div class="cust-name">${escapeHtml(c.name)}</div>
+        <div class="cust-meta">
+          ${c.person ? `<div class="cust-meta-line">👤 ${escapeHtml(c.person)}</div>` : ''}
+          ${c.address ? `<div class="cust-meta-line">📍 ${escapeHtml(c.address)}</div>` : ''}
+          ${c.contact ? `<div class="cust-meta-line">📞 ${escapeHtml(c.contact)}</div>` : ''}
+          ${c.memo ? `<div class="cust-meta-line" style="margin-top:4px;font-size:11px;">📝 ${escapeHtml(c.memo)}</div>` : ''}
+        </div>
+      </div>
+      <div class="cust-actions">
+        <button class="cust-action-btn" onclick="openCustomerEdit('${c.id}')">編集</button>
+        <button class="cust-action-btn del" onclick="deleteCustomer('${c.id}')">削除</button>
+      </div>
+    </div>`).join('');
+}
+
+function openCustomerEdit(id) {
+  document.getElementById('custEditId').value = id || '';
+  if (id) {
+    const c = loadCustomers().find(c=>c.id===id);
+    if (c) {
+      document.getElementById('custEditTitle').textContent = '顧客を編集';
+      document.getElementById('custEditName').value    = c.name || '';
+      document.getElementById('custEditPerson').value  = c.person || '';
+      document.getElementById('custEditAddress').value = c.address || '';
+      document.getElementById('custEditContact').value = c.contact || '';
+      document.getElementById('custEditMemo').value    = c.memo || '';
+    }
+  } else {
+    document.getElementById('custEditTitle').textContent = '顧客を登録';
+    ['custEditName','custEditPerson','custEditAddress','custEditContact','custEditMemo'].forEach(i => document.getElementById(i).value='');
+  }
+  openModal('custEditModal');
+}
+
+function saveCustomer() {
+  const name = document.getElementById('custEditName').value.trim();
+  if (!name) { alert('顧客名は必須です'); return; }
+  const id = document.getElementById('custEditId').value;
+  const arr = loadCustomers();
+  const data = {
+    id: id || ('c'+Date.now()),
+    name,
+    person:  document.getElementById('custEditPerson').value.trim(),
+    address: document.getElementById('custEditAddress').value.trim(),
+    contact: document.getElementById('custEditContact').value.trim(),
+    memo:    document.getElementById('custEditMemo').value.trim(),
+    created: id ? (arr.find(c=>c.id===id)?.created || new Date().toISOString()) : new Date().toISOString(),
+  };
+  if (id) { const i = arr.findIndex(c=>c.id===id); if (i>=0) arr[i] = data; }
+  else    { arr.unshift(data); }
+  saveCustomers(arr);
+  closeModal('custEditModal');
+  renderCustomers();
+  showToast('保存しました');
+}
+
+function deleteCustomer(id) {
+  if (!confirm('この顧客を削除しますか？')) return;
+  saveCustomers(loadCustomers().filter(c=>c.id!==id));
+  renderCustomers();
+}
+
+/* ── 顧客選択ピッカー（日報・見積もりから呼ぶ） ── */
+let _pickerTarget = null;
+
+function openCustomerPicker(target) {
+  _pickerTarget = target;
+  const arr = loadCustomers();
+  const body = document.getElementById('custPickerBody');
+  if (arr.length === 0) {
+    body.innerHTML = `<div class="cust-empty">登録済みの顧客がありません。<br><br>
+      <button class="btn btn-primary" style="max-width:200px;margin:0 auto;" onclick="closeModal('custPickerModal');switchPanel('customer');openCustomerEdit();">＋ 顧客を登録する</button></div>`;
+  } else {
+    body.innerHTML = arr.map(c => `
+      <div class="cust-item" style="cursor:pointer;" onclick="pickCustomer('${c.id}')">
+        <div class="cust-info">
+          <div class="cust-name">${escapeHtml(c.name)}</div>
+          <div class="cust-meta">
+            ${c.address ? `<div class="cust-meta-line">📍 ${escapeHtml(c.address)}</div>` : ''}
+            ${c.person ? `<div class="cust-meta-line">👤 ${escapeHtml(c.person)}</div>` : ''}
+          </div>
+        </div>
+        <div class="cust-actions"><button class="cust-action-btn">選択</button></div>
+      </div>`).join('');
+  }
+  openModal('custPickerModal');
+}
+
+function pickCustomer(id) {
+  const c = loadCustomers().find(c=>c.id===id);
+  if (!c) return;
+  if (_pickerTarget === 'report') {
+    document.getElementById('reportSite').value = c.address ? `${c.name} / ${c.address}` : c.name;
+  } else if (_pickerTarget === 'estimate') {
+    document.getElementById('estClient').value = c.name;
+    if (c.address && !document.getElementById('estSite').value) document.getElementById('estSite').value = c.address;
+  }
+  closeModal('custPickerModal');
+  showToast(`「${c.name}」を選択`);
+}
+
+/* ════════════════════
+   請求書
+════════════════════ */
+function loadInvoices() { return JSON.parse(localStorage.getItem('mgyb_invoices')||'[]'); }
+function saveInvoices(arr) { localStorage.setItem('mgyb_invoices', JSON.stringify(arr)); }
+
+let _lastEstimateData = null;  /* 直近の見積もり結果（請求書化用） */
+
+/* generateEstimate を override せず、その後に呼び出される箇所で保持 */
+const _origGenerateEstimate = generateEstimate;
+generateEstimate = function() {
+  _origGenerateEstimate.apply(this, arguments);
+  /* 計算ロジックの再現で _lastEstimateData をセット */
+  setTimeout(()=>{
+    const lines = [];
+    let subtotal = 0;
+    document.querySelectorAll('.item-entry').forEach(entry => {
+      const id = entry.id.replace('item-','');
+      const key = document.getElementById(`itype-${id}`)?.value;
+      if (!key) return;
+      const w = WORK_TYPES.find(w=>w.key===key);
+      if (!w) return;
+      const memo = document.getElementById(`imemo-${id}`)?.value.trim() || '';
+      let amt = 0;
+      if (key === 'custom') {
+        amt = parseInt(document.getElementById(`icustomamt-${id}`).value) || 0;
+        lines.push({ name: memo || 'その他', qty:'—', amt });
+      } else {
+        const qty = parseFloat(document.getElementById(`iqty-${id}`).value) || 0;
+        const unitAmt = parseInt(document.getElementById(`iamt-${id}`).value) || (w.materialUnit + w.laborUnit);
+        amt = Math.round(qty * unitAmt);
+        lines.push({ name: `${w.label}${memo?' ('+memo+')':''}`, qty:`${qty} ${w.unit}`, amt });
+      }
+      subtotal += amt;
+    });
+    if (lines.length === 0) return;
+    const taxRate = parseFloat(document.getElementById('taxRate').value);
+    const tax     = Math.round(subtotal * taxRate);
+    _lastEstimateData = {
+      client: document.getElementById('estClient').value.trim(),
+      site:   document.getElementById('estSite').value.trim(),
+      note:   document.getElementById('estNote').value.trim(),
+      lines, subtotal, tax, total: subtotal+tax, taxRate
+    };
+  }, 1300);
+};
+
+function convertToInvoice() {
+  if (!_lastEstimateData) { alert('まず見積もりを計算してください'); return; }
+  const inv = {
+    id: 'inv'+Date.now(),
+    no: generateInvoiceNo(),
+    issuedAt: new Date().toISOString(),
+    dueAt: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+    status: 'sent',
+    paidAt: null,
+    ..._lastEstimateData,
+  };
+  const arr = loadInvoices();
+  arr.unshift(inv);
+  saveInvoices(arr);
+  showToast('請求書を作成しました');
+  switchPanel('invoice');
+}
+
+function generateInvoiceNo() {
+  const d = new Date();
+  const ym = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}`;
+  const arr = loadInvoices();
+  const sameMonth = arr.filter(i => i.no && i.no.startsWith('INV-'+ym));
+  return `INV-${ym}-${String(sameMonth.length+1).padStart(3,'0')}`;
+}
+
+function renderInvoices() {
+  const list = document.getElementById('invoiceList');
+  const arr = loadInvoices();
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="cust-empty">作成済みの請求書がありません。<br>「見積もり」画面で見積もりを作成 → <strong>📄 請求書化</strong>で作成できます。</div>';
+    return;
+  }
+  const now = Date.now();
+  list.innerHTML = arr.map(inv => {
+    const overdue = inv.status === 'sent' && new Date(inv.dueAt).getTime() < now;
+    const status = overdue ? 'overdue' : inv.status;
+    const statusLabel = { draft:'下書き', sent:'送付済（未入金）', paid:'入金済', overdue:'入金期日超過' }[status];
+    const d = new Date(inv.issuedAt);
+    const due = new Date(inv.dueAt);
+    return `
+      <div class="cust-item" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div>
+            <div class="cust-name">${escapeHtml(inv.client || '案件名未記入')}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px;">${inv.no}　|　発行 ${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</div>
+          </div>
+          <span class="inv-status-pill ${status}">${statusLabel}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:11.5px;color:var(--muted);">支払期日 ${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}</span>
+          <span style="font-size:15px;font-weight:900;color:var(--navy);">¥${inv.total.toLocaleString()}</span>
+        </div>
+        <div class="inv-action-row" style="padding:0;">
+          <button class="inv-action-btn" onclick="openInvoiceDetail('${inv.id}')">📄 詳細・印刷</button>
+          ${inv.status !== 'paid'
+            ? `<button class="inv-action-btn paid-mark" onclick="markInvoicePaid('${inv.id}')">✓ 入金済にする</button>`
+            : `<button class="inv-action-btn" onclick="markInvoiceUnpaid('${inv.id}')">↩ 未入金に戻す</button>`}
+          <button class="inv-action-btn" style="color:#b91c1c;" onclick="deleteInvoice('${inv.id}')">削除</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openInvoiceDetail(id) {
+  const inv = loadInvoices().find(i=>i.id===id);
+  if (!inv) return;
+  const d = new Date(inv.issuedAt);
+  const due = new Date(inv.dueAt);
+  const taxLabel = inv.taxRate === 0 ? '消費税（非課税）' : inv.taxRate === 0.08 ? '消費税（8%）' : '消費税（10%）';
+  document.getElementById('invDetailBody').innerHTML = `
+    <div class="inv-meta">
+      <div class="inv-meta-cell"><span class="inv-meta-label">請求書No.</span><span class="inv-meta-val">${inv.no}</span></div>
+      <div class="inv-meta-cell"><span class="inv-meta-label">発行日</span><span class="inv-meta-val">${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</span></div>
+      <div class="inv-meta-cell"><span class="inv-meta-label">顧客・案件名</span><span class="inv-meta-val">${escapeHtml(inv.client||'—')}</span></div>
+      <div class="inv-meta-cell"><span class="inv-meta-label">支払期日</span><span class="inv-meta-val">${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}</span></div>
+    </div>
+    <div style="padding:14px 0 4px;">
+      <div class="est-line-head"><span>項目</span><span style="text-align:right">数量</span><span style="text-align:right">金額（円）</span></div>
+      ${inv.lines.map(l=>`<div class="est-line"><div class="est-line-name">${escapeHtml(l.name)}</div><div class="est-line-qty">${escapeHtml(String(l.qty))}</div><div class="est-line-amt">¥${l.amt.toLocaleString()}</div></div>`).join('')}
+      <div class="est-total-row sub"><span class="est-total-label">小計</span><span class="est-total-val">¥${inv.subtotal.toLocaleString()}</span></div>
+      <div class="est-total-row"><span class="est-total-label">${taxLabel}</span><span class="est-total-val">¥${inv.tax.toLocaleString()}</span></div>
+      <div class="est-total-row grand"><span class="est-total-label" style="font-weight:900;color:var(--navy);font-size:13px;">合計（税込）</span><span class="est-total-val">¥${inv.total.toLocaleString()}</span></div>
+    </div>
+    ${inv.note ? `<div class="est-note">【備考】${escapeHtml(inv.note)}</div>` : ''}
+    <div class="inv-action-row" style="padding:14px 0 0;">
+      <button class="inv-action-btn" onclick="printInvoice('${inv.id}')">🖨 PDF出力・印刷</button>
+      <button class="inv-action-btn" onclick="copyInvoiceText('${inv.id}')">📋 コピー</button>
+    </div>`;
+  openModal('invDetailModal');
+}
+
+function markInvoicePaid(id) {
+  const arr = loadInvoices();
+  const inv = arr.find(i=>i.id===id);
+  if (inv) { inv.status='paid'; inv.paidAt = new Date().toISOString(); saveInvoices(arr); renderInvoices(); showToast('入金済にしました'); }
+}
+function markInvoiceUnpaid(id) {
+  const arr = loadInvoices();
+  const inv = arr.find(i=>i.id===id);
+  if (inv) { inv.status='sent'; inv.paidAt = null; saveInvoices(arr); renderInvoices(); }
+}
+function deleteInvoice(id) {
+  if (!confirm('この請求書を削除しますか？')) return;
+  saveInvoices(loadInvoices().filter(i=>i.id!==id));
+  renderInvoices();
+}
+
+function copyInvoiceText(id) {
+  const inv = loadInvoices().find(i=>i.id===id);
+  if (!inv) return;
+  const d = new Date(inv.issuedAt), due = new Date(inv.dueAt);
+  const taxLabel = inv.taxRate === 0 ? '非課税' : (inv.taxRate*100)+'%';
+  const txt = [
+    `【請求書】${inv.no}`,
+    `発行日：${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`,
+    `支払期日：${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}`,
+    `宛先：${inv.client || '—'}`,
+    inv.site ? `現場：${inv.site}` : '', '',
+    '項目　／　数量　／　金額',
+    ...inv.lines.map(l=>`${l.name} ／ ${l.qty} ／ ¥${l.amt.toLocaleString()}`),
+    '',
+    `小計：¥${inv.subtotal.toLocaleString()}`,
+    `消費税（${taxLabel}）：¥${inv.tax.toLocaleString()}`,
+    `合計（税込）：¥${inv.total.toLocaleString()}`,
+    inv.note ? '\n備考：'+inv.note : '',
+  ].filter(l=>l!==null).join('\n');
+  navigator.clipboard.writeText(txt).then(()=>showToast());
+}
+
+function newInvoiceManual() {
+  alert('現在は「見積もり画面 → 請求書化」のフローで請求書を作成してください。\n手動作成フォームは次のバージョンで対応予定です。');
+  switchPanel('estimate');
+}
+
+/* ════════════════════
+   PDF出力（印刷経由）
+════════════════════ */
+function printDoc(panelId) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('print-target'));
+  document.getElementById(panelId).classList.add('print-target');
+  setTimeout(()=>window.print(), 100);
+}
+
+function printInvoice(id) {
+  const inv = loadInvoices().find(i=>i.id===id);
+  if (!inv) return;
+  const d = new Date(inv.issuedAt), due = new Date(inv.dueAt);
+  const taxLabel = inv.taxRate === 0 ? '消費税（非課税）' : inv.taxRate === 0.08 ? '消費税（8%）' : '消費税（10%）';
+  /* 印刷専用エリアに描画して印刷 */
+  const printArea = document.getElementById('printArea');
+  printArea.innerHTML = `
+    <style>
+      @media print { body * { visibility:hidden; } #printArea, #printArea * { visibility:visible; } #printArea { position:absolute; left:0; top:0; width:100%; padding:14mm; display:block !important; } @page { margin:0; } }
+    </style>
+    <div style="font-family:'Noto Sans JP',sans-serif;color:#111;">
+      <h1 style="text-align:center;font-size:24pt;letter-spacing:.3em;margin-bottom:20pt;border-bottom:3px double #1c2f5e;padding-bottom:10pt;">請　求　書</h1>
+      <div style="display:flex;justify-content:space-between;margin-bottom:18pt;">
+        <div style="font-size:11pt;line-height:1.7;">
+          <strong style="font-size:14pt;">${escapeHtml(inv.client||'—')} 様</strong><br>
+          ${inv.site ? '<span style="font-size:10pt;color:#666;">'+escapeHtml(inv.site)+'</span>' : ''}
+        </div>
+        <div style="font-size:10pt;line-height:1.8;text-align:right;">
+          請求書No. <strong>${inv.no}</strong><br>
+          発行日 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日<br>
+          支払期日 ${due.getFullYear()}年${due.getMonth()+1}月${due.getDate()}日
+        </div>
+      </div>
+      <p style="font-size:11pt;margin-bottom:14pt;">下記の通りご請求申し上げます。</p>
+      <div style="background:#1c2f5e;color:#fff;padding:10pt 14pt;font-size:14pt;font-weight:900;letter-spacing:.05em;margin-bottom:14pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        ご請求金額　¥${inv.total.toLocaleString()}（税込）
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:10.5pt;margin-bottom:18pt;">
+        <thead>
+          <tr style="background:#eef3ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+            <th style="padding:7pt 8pt;text-align:left;border:1px solid #c8d4f0;">項目</th>
+            <th style="padding:7pt 8pt;text-align:right;border:1px solid #c8d4f0;width:80pt;">数量</th>
+            <th style="padding:7pt 8pt;text-align:right;border:1px solid #c8d4f0;width:100pt;">金額（円）</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${inv.lines.map(l=>`<tr>
+            <td style="padding:7pt 8pt;border:1px solid #c8d4f0;">${escapeHtml(l.name)}</td>
+            <td style="padding:7pt 8pt;border:1px solid #c8d4f0;text-align:right;">${escapeHtml(String(l.qty))}</td>
+            <td style="padding:7pt 8pt;border:1px solid #c8d4f0;text-align:right;">¥${l.amt.toLocaleString()}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="2" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">小計</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.subtotal.toLocaleString()}</td></tr>
+          <tr><td colspan="2" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">${taxLabel}</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.tax.toLocaleString()}</td></tr>
+          <tr style="background:#eef3ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+            <td colspan="2" style="padding:9pt 8pt;text-align:right;border:1px solid #1c2f5e;font-weight:900;font-size:12pt;">合計（税込）</td>
+            <td style="padding:9pt 8pt;text-align:right;border:1px solid #1c2f5e;font-weight:900;font-size:14pt;color:#1c2f5e;">¥${inv.total.toLocaleString()}</td>
+          </tr>
+        </tfoot>
+      </table>
+      ${inv.note ? `<div style="border-left:3px solid #1c2f5e;padding:8pt 12pt;background:#f7f8fb;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><strong>備考：</strong>${escapeHtml(inv.note)}</div>` : ''}
+      <div style="margin-top:30pt;font-size:9.5pt;color:#666;border-top:1px solid #ddd;padding-top:10pt;">
+        ※ お振込手数料は貴社にてご負担くださいますようお願い申し上げます。<br>
+        ※ ご不明な点がございましたらお気軽にお問い合わせください。
+      </div>
+    </div>`;
+  printArea.style.display = 'block';
+  setTimeout(()=>{ window.print(); setTimeout(()=>{ printArea.style.display='none'; }, 500); }, 100);
+}
+
+/* ════════════════════
+   音声入力（Web Speech API）
+════════════════════ */
+let _recognition = null;
+let _recording = false;
+
+function initVoiceInput() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('micBtn').style.display = 'none';
+    document.getElementById('micHint').textContent = '※ お使いのブラウザは音声入力に対応していません';
+    return;
+  }
+  _recognition = new SR();
+  _recognition.lang = 'ja-JP';
+  _recognition.continuous = true;
+  _recognition.interimResults = false;
+
+  _recognition.onresult = (e) => {
+    const textarea = document.getElementById('reportInput');
+    let txt = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) txt += e.results[i][0].transcript;
+    }
+    if (txt) {
+      const cur = textarea.value;
+      textarea.value = cur + (cur && !cur.endsWith('\n') ? '\n' : '') + txt;
+    }
+  };
+  _recognition.onerror = (e) => {
+    console.warn('音声認識エラー:', e.error);
+    stopVoiceInput();
+    if (e.error === 'not-allowed') alert('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
+  };
+  _recognition.onend = () => {
+    if (_recording) { try { _recognition.start(); } catch(e) { stopVoiceInput(); } }
+  };
+}
+
+function toggleVoiceInput() {
+  if (!_recognition) { alert('音声入力に対応していません'); return; }
+  if (_recording) stopVoiceInput();
+  else            startVoiceInput();
+}
+
+function startVoiceInput() {
+  try {
+    _recognition.start();
+    _recording = true;
+    document.getElementById('micBtn').classList.add('recording');
+    document.getElementById('micHint').textContent = '🔴 録音中... もう一度ボタンを押すと停止';
+  } catch(e) { console.warn(e); }
+}
+
+function stopVoiceInput() {
+  _recording = false;
+  try { _recognition.stop(); } catch(e) {}
+  document.getElementById('micBtn').classList.remove('recording');
+  document.getElementById('micHint').textContent = '🎤 マイクボタンで音声入力できます';
+}
+
+/* ════════════════════
+   ユーティリティ
+════════════════════ */
+function openModal(id)  { document.getElementById(id).classList.add('on'); }
+function closeModal(id) { document.getElementById(id).classList.remove('on'); }
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* モーダル背景クリックで閉じる */
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) closeModal(m.id); });
+});
+
+/* ════════════════════
+   検索 — 既存renderをオーバーライド
+════════════════════ */
+const _origRenderHistory = renderHistory;
+renderHistory = function() {
+  renderDashboard();
+  const q = (document.getElementById('histSearch')?.value || '').trim().toLowerCase();
+  document.getElementById('histSearchClear').classList.toggle('on', !!q);
+  document.getElementById('histDetail').style.display = 'none';
+  document.getElementById('histListWrap').style.display = '';
+  const list = document.getElementById('histList');
+  let hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  if (q) hist = hist.filter(h => ((h.site||'')+(h.client||'')+(h.text||'')).toLowerCase().includes(q));
+  if (hist.length === 0) {
+    list.innerHTML = q
+      ? `<div class="hist-empty">「${escapeHtml(q)}」に一致する記録はありません</div>`
+      : '<div class="hist-empty">保存済みのデータがありません。<br>日報や見積もりを作成して「保存する」を押してください。</div>';
+    return;
+  }
+  const allHist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  list.innerHTML = hist.map(h => {
+    const i = allHist.indexOf(h);
+    const d = new Date(h.date);
+    const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const preview = (h.text||'').split('\n').filter(l=>l.trim()&&!l.startsWith('【')).slice(0,2).join(' ');
+    const tag = h.type === 'report' ? '日報' : '見積もり';
+    const name = h.site || h.client || '—';
+    return `<div class="hist-item" onclick="openHistDetail(${i})">
+      <div class="hist-item-date">${dateStr}</div>
+      <div class="hist-item-preview">${escapeHtml(name)} — ${escapeHtml(preview.slice(0,40))}…</div>
+      <div class="hist-item-tags"><span class="htag">${tag}</span>${name!=='—'?`<span class="htag">${escapeHtml(name)}</span>`:''}</div>
+    </div>`;
+  }).join('');
+};
+
+renderCustomers = function() {
+  const q = (document.getElementById('custSearch')?.value || '').trim().toLowerCase();
+  document.getElementById('custSearchClear').classList.toggle('on', !!q);
+  const list = document.getElementById('customerList');
+  let arr = loadCustomers();
+  if (q) arr = arr.filter(c => ((c.name||'')+(c.person||'')+(c.address||'')+(c.contact||'')+(c.memo||'')).toLowerCase().includes(q));
+  if (arr.length === 0) {
+    list.innerHTML = q
+      ? `<div class="cust-empty">「${escapeHtml(q)}」に一致する顧客はありません</div>`
+      : '<div class="cust-empty">登録済みの顧客がありません。<br>「＋ 新規顧客を登録」から追加してください。</div>';
+    return;
+  }
+  list.innerHTML = arr.map(c => {
+    const stats = getCustomerStats(c.id, c.name);
+    return `<div class="cust-item">
+      <div class="cust-info" style="cursor:pointer;" onclick="openCustomerDetail('${c.id}')">
+        <div class="cust-name">${escapeHtml(c.name)}</div>
+        <div class="cust-meta">
+          ${c.person ? `<div class="cust-meta-line">👤 ${escapeHtml(c.person)}</div>` : ''}
+          ${c.address ? `<div class="cust-meta-line">📍 ${escapeHtml(c.address)}</div>` : ''}
+          ${c.contact ? `<div class="cust-meta-line">📞 ${escapeHtml(c.contact)}</div>` : ''}
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="htag">日報 ${stats.reports}</span>
+          <span class="htag">見積 ${stats.estimates}</span>
+          <span class="htag ${stats.unpaid>0?'unpaid':''}">未入金 ¥${stats.unpaidAmt.toLocaleString()}</span>
+        </div>
+      </div>
+      <div class="cust-actions">
+        <button class="cust-action-btn" onclick="openCustomerEdit('${c.id}')">編集</button>
+        <button class="cust-action-btn del" onclick="deleteCustomer('${c.id}')">削除</button>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+const _origRenderInvoices = renderInvoices;
+renderInvoices = function() {
+  const q = (document.getElementById('invSearch')?.value || '').trim().toLowerCase();
+  document.getElementById('invSearchClear').classList.toggle('on', !!q);
+  const list = document.getElementById('invoiceList');
+  let arr = loadInvoices();
+  if (q) arr = arr.filter(inv => ((inv.client||'')+(inv.no||'')+(inv.site||'')).toLowerCase().includes(q));
+  if (arr.length === 0) {
+    list.innerHTML = q
+      ? `<div class="cust-empty">「${escapeHtml(q)}」に一致する請求書はありません</div>`
+      : '<div class="cust-empty">作成済みの請求書がありません。<br>「見積もり」画面で見積もりを作成 → <strong>📄 請求書化</strong>で作成できます。</div>';
+    return;
+  }
+  const now = Date.now();
+  list.innerHTML = arr.map(inv => {
+    const overdue = inv.status === 'sent' && new Date(inv.dueAt).getTime() < now;
+    const status = overdue ? 'overdue' : inv.status;
+    const statusLabel = { draft:'下書き', sent:'送付済（未入金）', paid:'入金済', overdue:'入金期日超過' }[status];
+    const d = new Date(inv.issuedAt);
+    const due = new Date(inv.dueAt);
+    return `
+      <div class="cust-item" style="flex-direction:column;align-items:stretch;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div>
+            <div class="cust-name">${escapeHtml(inv.client || '案件名未記入')}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:3px;">${inv.no}　|　発行 ${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</div>
+          </div>
+          <span class="inv-status-pill ${status}">${statusLabel}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:11.5px;color:var(--muted);">支払期日 ${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}</span>
+          <span style="font-size:15px;font-weight:900;color:var(--navy);">¥${inv.total.toLocaleString()}</span>
+        </div>
+        <div class="inv-action-row" style="padding:0;">
+          <button class="inv-action-btn" onclick="openInvoiceDetail('${inv.id}')">📄 詳細・印刷</button>
+          ${inv.status !== 'paid'
+            ? `<button class="inv-action-btn paid-mark" onclick="markInvoicePaid('${inv.id}')">✓ 入金済にする</button>`
+            : `<button class="inv-action-btn" onclick="markInvoiceUnpaid('${inv.id}')">↩ 未入金に戻す</button>`}
+          <button class="inv-action-btn" style="color:#b91c1c;" onclick="deleteInvoice('${inv.id}')">削除</button>
+        </div>
+      </div>`;
+  }).join('');
+  /* topbar アラートバッジ：期日超過がある場合 */
+  const hasOverdue = arr.some(inv => inv.status === 'sent' && new Date(inv.dueAt).getTime() < now);
+  document.getElementById('settingsBtn').classList.toggle('has-alert', hasOverdue);
+};
+
+/* ════════════════════
+   ダッシュボード
+════════════════════ */
+function renderDashboard() {
+  const wrap = document.getElementById('dashStrip');
+  if (!wrap) return;
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const invs = loadInvoices();
+  const now = new Date();
+  const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+
+  const monthlyHist = hist.filter(h => h.date.startsWith(ym));
+  const monthlyInvs = invs.filter(i => i.issuedAt.startsWith(ym));
+  const monthlyRevenue = monthlyInvs.reduce((s,i)=>s+i.total, 0);
+  const unpaid = invs.filter(i => i.status === 'sent');
+  const unpaidAmt = unpaid.reduce((s,i)=>s+i.total, 0);
+  const overdueCount = unpaid.filter(i => new Date(i.dueAt).getTime() < Date.now()).length;
+  const paidThisMonth = invs.filter(i => i.status==='paid' && i.paidAt && i.paidAt.startsWith(ym)).reduce((s,i)=>s+i.total, 0);
+
+  wrap.innerHTML = `
+    <div class="dash-card primary">
+      <div class="dash-label">今月 入金確定</div>
+      <div class="dash-val success">¥${paidThisMonth.toLocaleString()}</div>
+      <div class="dash-sub">${now.getMonth()+1}月分</div>
+    </div>
+    <div class="dash-card ${overdueCount>0?'alert':''}">
+      <div class="dash-label">未入金合計</div>
+      <div class="dash-val ${overdueCount>0?'danger':''}">¥${unpaidAmt.toLocaleString()}</div>
+      <div class="dash-sub">${unpaid.length}件${overdueCount>0?` / うち期日超過 ${overdueCount}件`:''}</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label">今月の業務</div>
+      <div class="dash-val">${monthlyHist.length}件</div>
+      <div class="dash-sub">日報・見積もり</div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-label">今月 売上見込</div>
+      <div class="dash-val">¥${monthlyRevenue.toLocaleString()}</div>
+      <div class="dash-sub">請求発行ベース</div>
+    </div>`;
+}
+
+/* ════════════════════
+   顧客詳細（紐づく日報・見積もり・請求書）
+════════════════════ */
+function getCustomerStats(cid, cname) {
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const invs = loadInvoices();
+  const matches = (text) => (text||'').includes(cname);
+  const reports = hist.filter(h => h.type==='report' && (h.customerId===cid || matches(h.site))).length;
+  const estimates = hist.filter(h => h.type==='estimate' && (h.customerId===cid || matches(h.client))).length;
+  const myInvs = invs.filter(i => i.customerId===cid || matches(i.client));
+  const unpaid = myInvs.filter(i => i.status==='sent');
+  return { reports, estimates, invoices: myInvs.length, unpaid: unpaid.length, unpaidAmt: unpaid.reduce((s,i)=>s+i.total,0) };
+}
+
+function openCustomerDetail(cid) {
+  const c = loadCustomers().find(c=>c.id===cid);
+  if (!c) return;
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const invs = loadInvoices();
+  const reports   = hist.filter(h => h.type==='report'   && (h.customerId===cid || (h.site||'').includes(c.name)));
+  const estimates = hist.filter(h => h.type==='estimate' && (h.customerId===cid || (h.client||'').includes(c.name)));
+  const myInvs    = invs.filter(i => i.customerId===cid || (i.client||'').includes(c.name));
+
+  document.getElementById('custDetailTitle').textContent = c.name;
+  document.getElementById('custDetailBody').innerHTML = `
+    <div style="margin-bottom:14px;">
+      ${c.person ? `<div class="cust-meta-line" style="font-size:12px;margin-bottom:4px;">👤 ${escapeHtml(c.person)}</div>` : ''}
+      ${c.address ? `<div class="cust-meta-line" style="font-size:12px;margin-bottom:4px;">📍 ${escapeHtml(c.address)}</div>` : ''}
+      ${c.contact ? `<div class="cust-meta-line" style="font-size:12px;margin-bottom:4px;">📞 ${escapeHtml(c.contact)}</div>` : ''}
+      ${c.memo ? `<div style="font-size:11.5px;color:var(--muted);margin-top:8px;padding:8px 10px;background:var(--off);border-radius:6px;">${escapeHtml(c.memo)}</div>` : ''}
+    </div>
+
+    <div class="linked-section">
+      <div class="linked-head">📄 請求書 <span class="linked-count">${myInvs.length}件</span></div>
+      ${myInvs.length === 0 ? '<div class="linked-empty">紐づく請求書はありません</div>' :
+        myInvs.slice(0,5).map(inv => {
+          const status = inv.status==='paid'?'paid':(inv.status==='sent'&&new Date(inv.dueAt)<Date.now()?'overdue':inv.status);
+          const lab = {draft:'下書き',sent:'未入金',paid:'入金済',overdue:'期日超過'}[status];
+          return `<div class="linked-item" onclick="closeModal('custDetailModal');switchPanel('invoice');openInvoiceDetail('${inv.id}')">
+            <div><strong>${inv.no}</strong> <span class="inv-status-pill ${status}">${lab}</span></div>
+            <div><strong>¥${inv.total.toLocaleString()}</strong> <span class="linked-item-date">${new Date(inv.issuedAt).toLocaleDateString()}</span></div>
+          </div>`;
+        }).join('')}
+    </div>
+
+    <div class="linked-section">
+      <div class="linked-head">💴 見積もり <span class="linked-count">${estimates.length}件</span></div>
+      ${estimates.length === 0 ? '<div class="linked-empty">紐づく見積もりはありません</div>' :
+        estimates.slice(0,5).map(h => `<div class="linked-item">
+          <div>${escapeHtml((h.client||'—').slice(0,20))}</div>
+          <div class="linked-item-date">${new Date(h.date).toLocaleDateString()}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="linked-section">
+      <div class="linked-head">📋 日報 <span class="linked-count">${reports.length}件</span></div>
+      ${reports.length === 0 ? '<div class="linked-empty">紐づく日報はありません</div>' :
+        reports.slice(0,5).map(h => `<div class="linked-item">
+          <div>${escapeHtml((h.site||'—').slice(0,20))}</div>
+          <div class="linked-item-date">${new Date(h.date).toLocaleDateString()}</div>
+        </div>`).join('')}
+    </div>`;
+  openModal('custDetailModal');
+}
+
+/* ════════════════════
+   設定 — エクスポート/インポート/削除
+════════════════════ */
+let _restoreMode = 'merge';
+
+function openSettings() {
+  renderSettingsStats();
+  document.getElementById('voiceSupportInfo').textContent =
+    (window.SpeechRecognition || window.webkitSpeechRecognition) ? '対応' : '非対応（ブラウザ要更新）';
+  const lastBackup = localStorage.getItem('mgyb_last_backup');
+  document.getElementById('lastBackupInfo').textContent =
+    lastBackup ? `最終バックアップ：${new Date(lastBackup).toLocaleString()}` : '※ まだ一度もバックアップしていません';
+  openModal('settingsModal');
+}
+
+function renderSettingsStats() {
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const invs = loadInvoices();
+  const custs = loadCustomers();
+  const reports   = hist.filter(h=>h.type==='report').length;
+  const estimates = hist.filter(h=>h.type==='estimate').length;
+  const unpaid = invs.filter(i=>i.status==='sent');
+  const overdue = unpaid.filter(i=>new Date(i.dueAt)<Date.now()).length;
+  const totalSize = new Blob([JSON.stringify({hist,invs,custs})]).size;
+  document.getElementById('settingsStats').innerHTML = `
+    <div class="settings-stat"><span class="settings-stat-label">登録顧客数</span><span class="settings-stat-val">${custs.length} 社</span></div>
+    <div class="settings-stat"><span class="settings-stat-label">日報</span><span class="settings-stat-val">${reports} 件</span></div>
+    <div class="settings-stat"><span class="settings-stat-label">見積もり</span><span class="settings-stat-val">${estimates} 件</span></div>
+    <div class="settings-stat"><span class="settings-stat-label">請求書（合計）</span><span class="settings-stat-val">${invs.length} 件</span></div>
+    <div class="settings-stat"><span class="settings-stat-label">未入金件数</span><span class="settings-stat-val ${overdue>0?'alert':''}">${unpaid.length} 件${overdue>0?`（期日超過 ${overdue}件）`:''}</span></div>
+    <div class="settings-stat"><span class="settings-stat-label">未入金合計</span><span class="settings-stat-val">¥${unpaid.reduce((s,i)=>s+i.total,0).toLocaleString()}</span></div>
+    <div class="settings-stat"><span class="settings-stat-label">データサイズ</span><span class="settings-stat-val">${(totalSize/1024).toFixed(1)} KB</span></div>`;
+}
+
+function exportAllData() {
+  const data = {
+    schema: 1,
+    exportedAt: new Date().toISOString(),
+    app: 'miyagis-gyomu',
+    customers: loadCustomers(),
+    history: JSON.parse(localStorage.getItem('mgyb_hist')||'[]'),
+    invoices: loadInvoices(),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}-${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `miyagis-gyomu-backup-${stamp}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  localStorage.setItem('mgyb_last_backup', new Date().toISOString());
+  showToast('バックアップを保存しました');
+  setTimeout(renderSettingsStats, 100);
+  document.getElementById('lastBackupInfo').textContent = `最終バックアップ：${new Date().toLocaleString()}`;
+}
+
+function handleRestoreFile(ev) {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.app !== 'miyagis-gyomu') throw new Error('Miyagi′s 業務のバックアップファイルではありません');
+      if (!Array.isArray(data.customers) || !Array.isArray(data.history) || !Array.isArray(data.invoices)) throw new Error('ファイル形式が不正です');
+
+      const summary = `読み込んだデータ：\n  顧客 ${data.customers.length}件 / 履歴 ${data.history.length}件 / 請求書 ${data.invoices.length}件\n\n` +
+        (_restoreMode === 'replace'
+          ? '⚠ 現在のデータをすべて消して上書きしますか？\n（事前に現在のデータをバックアップすることを推奨）'
+          : '➕ 現在のデータに追加マージしますか？（IDが重複するデータは新しい方で更新）');
+      if (!confirm(summary)) { ev.target.value=''; return; }
+
+      if (_restoreMode === 'replace') {
+        saveCustomers(data.customers);
+        localStorage.setItem('mgyb_hist', JSON.stringify(data.history));
+        saveInvoices(data.invoices);
+      } else {
+        /* マージ：IDで重複排除（新しい方を採用） */
+        const merge = (existing, incoming, key='id') => {
+          const map = new Map();
+          existing.forEach(x => map.set(x[key], x));
+          incoming.forEach(x => map.set(x[key], x));
+          return Array.from(map.values());
+        };
+        saveCustomers(merge(loadCustomers(), data.customers));
+        /* 履歴はdateで重複扱い */
+        const existingHist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+        const histMap = new Map();
+        [...existingHist, ...data.history].forEach(h => histMap.set(h.date + '|' + (h.text||'').slice(0,30), h));
+        localStorage.setItem('mgyb_hist', JSON.stringify(Array.from(histMap.values()).sort((a,b)=>b.date.localeCompare(a.date))));
+        saveInvoices(merge(loadInvoices(), data.invoices));
+      }
+      showToast('復元しました');
+      renderSettingsStats();
+    } catch (err) {
+      console.error(err);
+      const t = document.getElementById('copyToast');
+      t.textContent = '読込失敗：'+err.message;
+      t.classList.add('show','err');
+      setTimeout(()=>{ t.classList.remove('show','err'); }, 3500);
+    }
+    ev.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function clearCategory(cat, label) {
+  if (!confirm(`「${label}」のデータをすべて削除しますか？\nこの操作は元に戻せません。`)) return;
+  if (cat === 'hist') localStorage.removeItem('mgyb_hist');
+  if (cat === 'invoices') localStorage.removeItem('mgyb_invoices');
+  if (cat === 'customers') localStorage.removeItem('mgyb_customers');
+  showToast(`${label}を削除しました`);
+  renderSettingsStats();
+}
+
+function clearAllData() {
+  if (!confirm('⚠ 本当にすべてのデータを削除しますか？\n顧客・日報・見積もり・請求書のすべてが消えます。\n\n事前にバックアップを推奨します。')) return;
+  if (!confirm('最終確認：本当に削除します。よろしいですか？')) return;
+  ['mgyb_hist','mgyb_invoices','mgyb_customers','mgyb_last_backup'].forEach(k => localStorage.removeItem(k));
+  showToast('全データを削除しました');
+  renderSettingsStats();
+  closeModal('settingsModal');
+}
+
+/* ════════════════════
+   日報・見積もり保存時に顧客IDを紐付け
+════════════════════ */
+const _origSaveReport = saveReport;
+saveReport = function() {
+  if (!_lastReportText) return;
+  const site = document.getElementById('reportSite').value.trim();
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const cust = loadCustomers().find(c => site.includes(c.name));
+  hist.unshift({ type:'report', date: new Date().toISOString(), site, raw: _lastRawReport, text: _lastReportText, customerId: cust?.id });
+  localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,200)));
+  showToast('保存しました');
+};
+
+const _origSaveEstimate = saveEstimate;
+saveEstimate = function() {
+  if (!_lastEstText) return;
+  const client = document.getElementById('estClient').value.trim();
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const cust = loadCustomers().find(c => client.includes(c.name));
+  hist.unshift({ type:'estimate', date: new Date().toISOString(), client, text: _lastEstText, customerId: cust?.id });
+  localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,200)));
+  showToast('保存しました');
+};
+
+const _origConvertToInvoice = convertToInvoice;
+convertToInvoice = function() {
+  if (!_lastEstimateData) { alert('まず見積もりを計算してください'); return; }
+  const cust = loadCustomers().find(c => _lastEstimateData.client.includes(c.name));
+  const inv = {
+    id: 'inv'+Date.now(),
+    no: generateInvoiceNo(),
+    issuedAt: new Date().toISOString(),
+    dueAt: new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+    status: 'sent',
+    paidAt: null,
+    customerId: cust?.id,
+    ..._lastEstimateData,
+  };
+  const arr = loadInvoices();
+  arr.unshift(inv);
+  saveInvoices(arr);
+  showToast('請求書を作成しました');
+  switchPanel('invoice');
+};
+
+/* ════════════════════
+   初期化
+════════════════════ */
+addItem();
+initVoiceInput();
+/* 起動時に期日超過チェック */
+(function checkOverdueOnLoad(){
+  const invs = loadInvoices();
+  const now = Date.now();
+  const hasOverdue = invs.some(i => i.status==='sent' && new Date(i.dueAt).getTime() < now);
+  document.getElementById('settingsBtn').classList.toggle('has-alert', hasOverdue);
+})();
+</script>
+</body>
+</html>
