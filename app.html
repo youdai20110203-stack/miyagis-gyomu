@@ -847,23 +847,17 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       <button class="modal-close" onclick="closeModal('invCreateModal')">×</button>
     </div>
     <div class="modal-body">
-      <div class="field" style="margin-bottom:14px;">
-        <label class="field-label">宛先（取引先名）</label>
-        <input type="text" id="invCreateClient" class="field-input" placeholder="例：山田建設 株式会社">
+      <div class="field"><label>宛先（取引先名）</label><input type="text" id="invCreateClient" placeholder="例：株式会社〇〇"></div>
+      <div id="invCreateManualFields" style="display:none;">
+        <div class="field"><label>工事内容・品名</label><input type="text" id="invCreateItem" placeholder="例：屋根葺替工事一式"></div>
+        <div class="field-row">
+          <div class="field"><label>金額（税抜・円）</label><input type="number" id="invCreateAmount" placeholder="500000" min="0" step="1"></div>
+          <div class="field"><label>税率</label><select id="invCreateTaxRate"><option value="0.1">10%</option><option value="0.08">8%（軽減）</option><option value="0">非課税</option></select></div>
+        </div>
       </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label class="field-label">発行日</label>
-        <input type="date" id="invCreateIssuedAt" class="field-input">
-      </div>
-      <div class="field" style="margin-bottom:14px;">
-        <label class="field-label">支払期日 <span style="color:#b91c1c;font-weight:700;">*必須</span></label>
-        <input type="date" id="invCreateDueAt" class="field-input">
-        <div id="invCreateDueWarn" style="display:none;color:#b91c1c;font-size:11px;margin-top:4px;">支払期日を入力してください</div>
-      </div>
-      <div class="field" style="margin-bottom:6px;">
-        <label class="field-label">備考（任意）</label>
-        <textarea id="invCreateNote" class="field-input" rows="2" placeholder="振込手数料はご負担ください　など"></textarea>
-      </div>
+      <div class="field"><label>発行日</label><input type="date" id="invCreateIssuedAt"></div>
+      <div class="field"><label>支払期日 <span style="color:#b91c1c;">*必須</span></label><input type="date" id="invCreateDueAt"><div id="invCreateDueWarn" style="display:none;color:#b91c1c;font-size:11px;margin-top:4px;">支払期日を入力してください</div></div>
+      <div class="field"><label>備考（任意）</label><textarea id="invCreateNote" style="min-height:60px;" placeholder="振込手数料はご負担ください　など"></textarea></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" style="flex:1;" onclick="closeModal('invCreateModal')">キャンセル</button>
@@ -1789,6 +1783,10 @@ function openInvCreateModal(estimateData) {
   document.getElementById('invCreateClient').value = estimateData?.client || '';
   document.getElementById('invCreateTitle').textContent = estimateData ? '見積もりを請求書化' : '請求書を新規作成';
   document.getElementById('invCreateDueWarn').style.display = 'none';
+  document.getElementById('invCreateManualFields').style.display = estimateData ? 'none' : '';
+  document.getElementById('invCreateItem').value = '';
+  document.getElementById('invCreateAmount').value = '';
+  document.getElementById('invCreateTaxRate').value = '0.1';
   document.getElementById('invCreateModal').dataset.estimateJson = estimateData ? JSON.stringify(estimateData) : '';
   document.getElementById('invCreateModal').dataset.editId = '';
   openModal('invCreateModal');
@@ -1829,6 +1827,23 @@ function confirmCreateInvoice() {
   }
 
   /* 新規作成モード */
+  let base;
+  if (estimateData) {
+    base = estimateData;
+  } else {
+    /* 手動作成: 単一明細から請求書を作成 */
+    const item = document.getElementById('invCreateItem').value.trim() || '工事一式';
+    const amount = parseInt(document.getElementById('invCreateAmount').value, 10);
+    const taxRate = parseFloat(document.getElementById('invCreateTaxRate').value);
+    if (!client) { alert('宛先（取引先名）を入力してください'); document.getElementById('invCreateClient').focus(); return; }
+    if (!amount || amount <= 0) { alert('金額を入力してください'); document.getElementById('invCreateAmount').focus(); return; }
+    const tax = Math.round(amount * taxRate);
+    base = {
+      client, site: '', note: '',
+      lines: [{ name: item, qty: 1, amt: amount }],
+      subtotal: amount, tax, total: amount + tax, taxRate
+    };
+  }
   const iss = loadIssuer();
   if (!iss.name || !iss.regNo) {
     const msg = !iss.name
@@ -1836,8 +1851,7 @@ function confirmCreateInvoice() {
       : '⚠ 適格請求書発行事業者の登録番号が未設定です。\n登録番号がない請求書は、受取側が消費税の仕入税額控除をできません。\n\nこのまま続けますか？';
     if (!confirm(msg)) { closeModal('invCreateModal'); openSettings(); return; }
   }
-  const cust = loadCustomers().find(c => (estimateData?.client || client).includes(c.name));
-  const base = estimateData || { client, lines:[], subtotal:0, tax:0, total:0, taxRate:0.1, site:'' };
+  const cust = loadCustomers().find(c => (base.client || client).includes(c.name));
   const inv = {
     id: 'inv'+Date.now(),
     no: generateInvoiceNo(),
