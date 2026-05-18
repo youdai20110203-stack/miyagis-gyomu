@@ -1650,11 +1650,19 @@ function printInvoice(id) {
 let _recognition = null;
 let _recording = false;
 
+function isIOS() {
+  return /iP(hone|od|ad)/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 function initVoiceInput() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
+  if (!SR || isIOS()) {
     document.getElementById('micBtn').style.display = 'none';
-    document.getElementById('micHint').textContent = '※ お使いのブラウザは音声入力に対応していません';
+    document.getElementById('micHint').textContent =
+      isIOS()
+        ? 'iPhoneはキーボードの 🎤 マイクキーでそのまま話しかけてください'
+        : '※ このブラウザは音声入力に対応していません（Android Chromeを推奨）';
     return;
   }
   _recognition = new SR();
@@ -1950,7 +1958,8 @@ let _restoreMode = 'merge';
 function openSettings() {
   renderSettingsStats();
   document.getElementById('voiceSupportInfo').textContent =
-    (window.SpeechRecognition || window.webkitSpeechRecognition) ? '対応' : '非対応（ブラウザ要更新）';
+    isIOS() ? 'iPhone/iPadは非対応（キーボードマイクを使用）' :
+    (window.SpeechRecognition || window.webkitSpeechRecognition) ? '対応（Android Chrome）' : '非対応（Android Chromeを推奨）';
   const lastBackup = localStorage.getItem('mgyb_last_backup');
   document.getElementById('lastBackupInfo').textContent =
     lastBackup ? `最終バックアップ：${new Date(lastBackup).toLocaleString()}` : '※ まだ一度もバックアップしていません';
