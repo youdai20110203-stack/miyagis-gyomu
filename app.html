@@ -764,13 +764,23 @@ function switchPanel(id) {
    日報生成ロジック
 ════════════════════ */
 function detectDomain(raw) {
-  if (/型枠|コンクリ|打設|基礎|鉄筋|外壁|屋根|養生|足場|解体|土工|掘削|埋戻|舗装|配管|電気工事|施工|現場.*作業員|作業員.*現場/.test(raw)) return 'construction';
+  if (/型枠|コンクリ|打設|基礎|鉄筋|外壁|屋根|養生|足場|解体|土工|掘削|埋戻|舗装|配管|電気工事|施工|現場.*作業員|作業員.*現場|内装|左官|防水|外構|タイル|断熱|サッシ|クロス|石膏ボード|シーリング|コーキング|仮設|捨てコン|根切り|均し|転圧|杭|土間|屋根葺|瓦|板金|塗替|塗り替|吹付|吹き付|鉄骨|溶接.*現場|現場.*溶接|フォークリフト|建設|工務店|大工|左官職|外壁職/.test(raw)) return 'construction';
+  if (/製造|加工|溶接|組立|ライン|工場|切削|プレス|板金.*工場|工場.*板金|品質検査|設備保全|生産|機械操作|ロット|製品検査|出荷検査|塗装.*工場|工場.*塗装|NC|旋盤|マシニング/.test(raw)) return 'manufacturing';
   if (/バグ|デプロイ|リリース|コード|API|システム開発|テスト|エラー修正|サーバー|データベース/.test(raw)) return 'tech';
   if (/見積もり|請求書|商談|顧客訪問|営業|提案書|受注|発注|契約/.test(raw)) return 'office';
   return 'general';
 }
 
 const HUMAN_PAT = /暑(い|かった|すぎ)|寒(い|かった)|熱中症|日差し|ありがとう|感謝|助かった|職人さん|ベテラン職人|みんな頑張|よく頑張|すごかっ|いい現場|良い現場|休憩(増やし|多め|たっぷり)|ちょっと休ん|疲れた|しんどかった|きつかった|へとへと|つらかった/;
+
+/* 日付ベースの揺らぎ生成 — 同じ日は同じ結果、日が変わると変わる */
+function pick(arr) {
+  const d = new Date();
+  const seed = d.getDate() * 7 + d.getMonth() * 31;
+  return arr[seed % arr.length];
+}
+function pickDone()    { return pick(['を完了した','を終えた','を仕上げた','を終わらせた','を済ませた']); }
+function pickOngoing() { return pick(['を進めた','に取り組んだ','を行った','を実施した','を進めている']); }
 
 function buildTaskSentence(text, period, domain, raw) {
   const t = text.trim();
@@ -780,55 +790,88 @@ function buildTaskSentence(text, period, domain, raw) {
   const isWaiting = /待ち|待機|保留|確認中|回答待ち|連絡待ち/.test(t);
   const nm = raw.match(/(\d+)\s*(名|人)\b/);
   const wSuffix = nm ? `（作業員${nm[1]}名）` : '';
+  const done = pickDone(); const going = pickOngoing();
 
   if (domain === 'construction') {
-    if (/打設|コンクリ/.test(t)) return isDone ? `${prefix}コンクリート打設を完了し、養生フェーズへ移行${wSuffix}` : `${prefix}コンクリート打設作業を進めた${wSuffix}`;
-    if (/型枠/.test(t))          return isDone ? `${prefix}型枠の設置・固定を終えた${wSuffix}` : `${prefix}型枠の設置を進めた${wSuffix}`;
-    if (/基礎/.test(t))          return isDone ? `${prefix}基礎工事の所定工程を完了した${wSuffix}` : `${prefix}基礎工事を進めた${wSuffix}`;
-    if (/鉄筋|配筋/.test(t))     return isDone ? `${prefix}鉄筋組み・配筋作業を仕上げた${wSuffix}` : `${prefix}鉄筋組み・配筋作業を進めた${wSuffix}`;
-    if (/養生/.test(t))          return isDone ? `${prefix}養生シートの設置・固定を終えた${wSuffix}` : `${prefix}養生処置を行った${wSuffix}`;
-    if (/足場/.test(t))          return isDone ? `${prefix}足場を組み上げ、安全点検まで完了した${wSuffix}` : `${prefix}足場の設置・安全点検を進めた${wSuffix}`;
-    if (/解体/.test(t))          return isDone ? `${prefix}解体作業の所定範囲を終えた${wSuffix}` : `${prefix}解体作業を進めた${wSuffix}`;
-    if (/外壁|塗装/.test(t))     return isDone ? `${prefix}外壁・塗装工事の所定範囲を仕上げた${wSuffix}` : `${prefix}外壁・塗装工事を進めた${wSuffix}`;
-    if (/掘削|埋戻|土工/.test(t))return isDone ? `${prefix}掘削・埋戻し作業を終えた${wSuffix}` : `${prefix}土工作業を進めた${wSuffix}`;
-    if (/配管|設備/.test(t))     return isDone ? `${prefix}設備配管工事の所定範囲を完了した${wSuffix}` : `${prefix}設備配管工事を進めた${wSuffix}`;
-    if (/KY|危険予知|朝礼/.test(t)) return `${prefix}KY活動・安全確認ミーティングを行った${wSuffix}`;
-    if (/資材|材料|搬入|搬出/.test(t)) return isDone ? `${prefix}資材の搬入・整理を終えた${wSuffix}` : `${prefix}資材の搬入・現場段取りを行った${wSuffix}`;
-    if (/片付け|清掃|整理/.test(t)) return isDone ? `${prefix}現場の片付け・整理整頓を終えた${wSuffix}` : `${prefix}現場清掃・片付けを行った${wSuffix}`;
-    if (/打ち合わせ|MTG|監督/.test(t)) return `${prefix}施工内容・工程について現場監督と打ち合わせを行った`;
-    if (/検査|点検/.test(t))     return isDone ? `${prefix}施工状況の確認・品質点検を終えた${wSuffix}` : `${prefix}施工状況の確認・品質点検を行った${wSuffix}`;
+    if (/打設|コンクリ/.test(t))        return isDone ? `${prefix}コンクリート打設${done}。養生フェーズへ移行${wSuffix}` : `${prefix}コンクリート打設作業${going}${wSuffix}`;
+    if (/型枠/.test(t))                  return isDone ? `${prefix}型枠の設置・固定${done}${wSuffix}` : `${prefix}型枠の設置作業${going}${wSuffix}`;
+    if (/基礎/.test(t))                  return isDone ? `${prefix}基礎工事の所定工程${done}${wSuffix}` : `${prefix}基礎工事${going}${wSuffix}`;
+    if (/鉄筋|配筋/.test(t))            return isDone ? `${prefix}鉄筋組み・配筋作業${done}${wSuffix}` : `${prefix}鉄筋組み・配筋作業${going}${wSuffix}`;
+    if (/養生/.test(t))                  return isDone ? `${prefix}養生シートの設置・固定${done}${wSuffix}` : `${prefix}養生処置${going}${wSuffix}`;
+    if (/足場/.test(t))                  return isDone ? `${prefix}足場を組み上げ、安全点検まで${done}${wSuffix}` : `${prefix}足場の設置・安全点検${going}${wSuffix}`;
+    if (/解体/.test(t))                  return isDone ? `${prefix}解体作業の所定範囲${done}${wSuffix}` : `${prefix}解体作業${going}${wSuffix}`;
+    if (/外壁/.test(t) && /塗装|吹/.test(t)) return isDone ? `${prefix}外壁塗装工事の所定範囲${done}${wSuffix}` : `${prefix}外壁塗装工事${going}${wSuffix}`;
+    if (/外壁/.test(t))                  return isDone ? `${prefix}外壁工事の所定範囲${done}${wSuffix}` : `${prefix}外壁工事${going}${wSuffix}`;
+    if (/塗装|塗替|塗り替|吹付|吹き付/.test(t)) return isDone ? `${prefix}塗装工事の所定範囲${done}${wSuffix}` : `${prefix}塗装工事${going}${wSuffix}`;
+    if (/掘削|根切り/.test(t))           return isDone ? `${prefix}掘削・根切り作業${done}${wSuffix}` : `${prefix}掘削・根切り作業${going}${wSuffix}`;
+    if (/埋戻|均し|転圧/.test(t))        return isDone ? `${prefix}埋戻し・均し・転圧作業${done}${wSuffix}` : `${prefix}土工作業（埋戻し・転圧）${going}${wSuffix}`;
+    if (/土工|土間|捨てコン/.test(t))    return isDone ? `${prefix}土工・土間コンクリート打設${done}${wSuffix}` : `${prefix}土工作業${going}${wSuffix}`;
+    if (/配管|給排水/.test(t))           return isDone ? `${prefix}給排水配管工事の所定範囲${done}${wSuffix}` : `${prefix}給排水配管工事${going}${wSuffix}`;
+    if (/電気|電線|盤|スイッチ/.test(t)) return isDone ? `${prefix}電気工事の所定範囲${done}${wSuffix}` : `${prefix}電気工事${going}${wSuffix}`;
+    if (/設備|空調|換気/.test(t))        return isDone ? `${prefix}設備工事（空調・換気）の所定範囲${done}${wSuffix}` : `${prefix}設備工事${going}${wSuffix}`;
+    if (/内装|クロス|石膏ボード|ボード/.test(t)) return isDone ? `${prefix}内装工事（${t.includes('クロス')?'クロス張り':'ボード貼り'}等）${done}${wSuffix}` : `${prefix}内装仕上げ工事${going}${wSuffix}`;
+    if (/左官|モルタル|タイル/.test(t))  return isDone ? `${prefix}左官・タイル工事の所定範囲${done}${wSuffix}` : `${prefix}左官・仕上げ工事${going}${wSuffix}`;
+    if (/防水|シーリング|コーキング/.test(t)) return isDone ? `${prefix}防水・シーリング処理${done}${wSuffix}` : `${prefix}防水・シーリング工事${going}${wSuffix}`;
+    if (/断熱|サッシ|窓/.test(t))        return isDone ? `${prefix}断熱・サッシ取付工事${done}${wSuffix}` : `${prefix}断熱・建具工事${going}${wSuffix}`;
+    if (/屋根|瓦|ルーフ|板金/.test(t))  return isDone ? `${prefix}屋根工事の所定範囲${done}${wSuffix}` : `${prefix}屋根工事${going}${wSuffix}`;
+    if (/外構|駐車場|ブロック/.test(t))  return isDone ? `${prefix}外構工事の所定範囲${done}${wSuffix}` : `${prefix}外構・舗装工事${going}${wSuffix}`;
+    if (/舗装|アスファルト/.test(t))     return isDone ? `${prefix}舗装工事の所定範囲${done}${wSuffix}` : `${prefix}舗装工事${going}${wSuffix}`;
+    if (/杭|仮設|仮囲い/.test(t))        return isDone ? `${prefix}仮設工事・杭打ち${done}${wSuffix}` : `${prefix}仮設・準備工事${going}${wSuffix}`;
+    if (/鉄骨|溶接/.test(t))            return isDone ? `${prefix}鉄骨・溶接工事の所定範囲${done}${wSuffix}` : `${prefix}鉄骨・溶接工事${going}${wSuffix}`;
+    if (/KY|危険予知|朝礼/.test(t))     return `${prefix}KY活動・安全確認ミーティング${going}${wSuffix}`;
+    if (/資材|材料|搬入|搬出/.test(t))  return isDone ? `${prefix}資材の搬入・現場整理${done}${wSuffix}` : `${prefix}資材の搬入・現場段取り${going}${wSuffix}`;
+    if (/片付け|清掃|整理/.test(t))     return isDone ? `${prefix}現場の片付け・整理整頓${done}${wSuffix}` : `${prefix}現場清掃・片付け${going}${wSuffix}`;
+    if (/打ち合わせ|MTG|監督|元請/.test(t)) return `${prefix}施工内容・工程について現場監督と打ち合わせ${going}`;
+    if (/行政|検査員|完了検査|中間検査/.test(t)) return isDone ? `${prefix}行政・完了検査の立ち会いと確認作業${done}` : `${prefix}行政検査の準備・対応${going}`;
+    if (/近隣|クレーム|苦情/.test(t))   return `${prefix}近隣への施工説明・配慮対応${going}`;
+    if (/検査|点検/.test(t))            return isDone ? `${prefix}施工状況の確認・品質点検${done}${wSuffix}` : `${prefix}施工状況の確認・品質点検${going}${wSuffix}`;
     if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の承認・指示を待った`;
     const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
-    return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}${wSuffix}`;
+    return `${prefix}${core}${isDone ? done : going}${wSuffix}`;
+  }
+
+  if (domain === 'manufacturing') {
+    if (/溶接/.test(t))        return isDone ? `${prefix}溶接作業の担当工程${done}${wSuffix}` : `${prefix}溶接作業${going}${wSuffix}`;
+    if (/組立|アッセンブル/.test(t)) return isDone ? `${prefix}部品の組み立て作業${done}${wSuffix}` : `${prefix}組み立て作業${going}${wSuffix}`;
+    if (/切削|旋盤|マシニング|NC/.test(t)) return isDone ? `${prefix}切削加工の担当ロット${done}${wSuffix}` : `${prefix}切削加工作業${going}${wSuffix}`;
+    if (/プレス|板金/.test(t)) return isDone ? `${prefix}プレス・板金加工の担当工程${done}${wSuffix}` : `${prefix}プレス・板金加工${going}${wSuffix}`;
+    if (/検査|品質|QC/.test(t))return isDone ? `${prefix}品質検査・外観確認${done}${wSuffix}` : `${prefix}品質検査・サンプル確認${going}${wSuffix}`;
+    if (/出荷|梱包|入荷/.test(t)) return isDone ? `${prefix}出荷・梱包作業${done}${wSuffix}` : `${prefix}出荷・入荷対応${going}${wSuffix}`;
+    if (/設備|保全|メンテ/.test(t)) return isDone ? `${prefix}設備点検・保全作業${done}${wSuffix}` : `${prefix}設備保全・点検${going}${wSuffix}`;
+    if (/段取|段替/.test(t))   return isDone ? `${prefix}ライン段取り替え${done}${wSuffix}` : `${prefix}段取り替え作業${going}${wSuffix}`;
+    if (/清掃|5S|整理整頓/.test(t)) return isDone ? `${prefix}工場内清掃・5S活動${done}${wSuffix}` : `${prefix}5S・清掃活動${going}${wSuffix}`;
+    if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の確認・指示を待った`;
+    const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
+    return `${prefix}${core}${isDone ? done : going}${wSuffix}`;
   }
 
   if (domain === 'tech') {
-    if (/バグ|不具合|エラー/.test(t)) { const loc = t.match(/([^\s]{2,10}(?:画面|機能|API|モジュール))/); const l = loc ? `${loc[1]}の` : ''; return isDone ? `${prefix}${l}不具合を修正し、動作確認まで完了した` : `${prefix}${l}不具合の原因を調査・切り分けた`; }
-    if (/デプロイ|リリース/.test(t)) return isDone ? `${prefix}本番環境へのデプロイを完了し、動作確認まで行った` : `${prefix}リリース作業の準備・手順確認を進めた`;
-    if (/テスト|検証/.test(t))       return isDone ? `${prefix}動作テスト・品質検証を終えた` : `${prefix}動作テスト・検証を進めた`;
-    if (/打ち合わせ|MTG/.test(t))    return `${prefix}チーム内での仕様確認・方針共有の打ち合わせを行った`;
-    if (/レビュー/.test(t))          return isDone ? `${prefix}コードレビューを完了し、指摘事項を修正した` : `${prefix}コードレビューに対応した`;
+    if (/バグ|不具合|エラー/.test(t)) { const loc = t.match(/([^\s]{2,10}(?:画面|機能|API|モジュール))/); const l = loc ? `${loc[1]}の` : ''; return isDone ? `${prefix}${l}不具合を修正し、動作確認まで${done}` : `${prefix}${l}不具合の原因を調査・切り分けた`; }
+    if (/デプロイ|リリース/.test(t)) return isDone ? `${prefix}本番環境へのデプロイ${done}。動作確認まで完了` : `${prefix}リリース作業の準備・手順確認${going}`;
+    if (/テスト|検証/.test(t))       return isDone ? `${prefix}動作テスト・品質検証${done}` : `${prefix}動作テスト・検証${going}`;
+    if (/打ち合わせ|MTG/.test(t))    return `${prefix}チーム内での仕様確認・方針共有の打ち合わせ${going}`;
+    if (/レビュー/.test(t))          return isDone ? `${prefix}コードレビュー${done}。指摘事項も修正済み` : `${prefix}コードレビューへの対応${going}`;
     if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の承認を待った`;
     const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
-    return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}`;
+    return `${prefix}${core}${isDone ? done : going}`;
   }
 
   if (domain === 'office') {
-    if (/見積もり|見積/.test(t)) return isWaiting ? `${prefix}見積書を作成・提出し、先方の確認回答を待っている` : isDone ? `${prefix}見積書の作成・提出を終えた` : `${prefix}見積書の作成・条件整理を進めた`;
-    if (/請求書|発注書/.test(t)) return isDone ? `${prefix}請求書・発注書の作成・送付を終えた` : `${prefix}請求書・発注書の作成を進めた`;
-    if (/商談|提案|営業/.test(t)) return isDone ? `${prefix}顧客への提案・商談を行い、内容を整理した` : `${prefix}顧客訪問・商談対応を行った`;
+    if (/見積もり|見積/.test(t)) return isWaiting ? `${prefix}見積書を作成・提出し、先方の確認回答を待っている` : isDone ? `${prefix}見積書の作成・提出${done}` : `${prefix}見積書の作成・条件整理${going}`;
+    if (/請求書|発注書/.test(t)) return isDone ? `${prefix}請求書・発注書の作成・送付${done}` : `${prefix}請求書・発注書の作成${going}`;
+    if (/商談|提案|営業/.test(t)) return isDone ? `${prefix}顧客への提案・商談${done}。内容を整理した` : `${prefix}顧客訪問・商談対応${going}`;
     if (/打ち合わせ|MTG|会議/.test(t)) return `${prefix}関係者との打ち合わせで課題・方針を共有した`;
-    if (/書類|資料|ドキュメント/.test(t)) return isDone ? `${prefix}必要書類・資料の整備を終えた` : `${prefix}業務書類・資料の作成・整理を進めた`;
-    if (/電話|問い合わせ|顧客対応/.test(t)) return isDone ? `${prefix}顧客からの問い合わせに対応し、回答まで完了した` : `${prefix}顧客への連絡・問い合わせ対応を行った`;
+    if (/書類|資料|ドキュメント/.test(t)) return isDone ? `${prefix}必要書類・資料の整備${done}` : `${prefix}業務書類・資料の作成・整理${going}`;
+    if (/電話|問い合わせ|顧客対応/.test(t)) return isDone ? `${prefix}顧客からの問い合わせに対応し、回答まで${done}` : `${prefix}顧客への連絡・問い合わせ対応${going}`;
     if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の回答・確認を待った`;
     const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
-    return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}`;
+    return `${prefix}${core}${isDone ? done : going}`;
   }
 
-  if (/打ち合わせ|MTG|ミーティング/.test(t)) return `${prefix}関係者との打ち合わせ・情報共有を行った`;
+  if (/打ち合わせ|MTG|ミーティング/.test(t)) return `${prefix}関係者との打ち合わせ・情報共有${going}`;
   if (isWaiting) return `${prefix}${t.replace(/待ち|待機中?/,'').trim()}の確認・回答を待った`;
   const core = t.replace(/した$|やった$|完了$|終わった$/,'').trim();
-  return `${prefix}${core}${isDone ? 'を完了した' : 'を進めた'}`;
+  return `${prefix}${core}${isDone ? done : going}`;
 }
 
 function buildIssue(seg, domain, raw) {
@@ -907,9 +950,27 @@ function buildNextActions(raw, domain) {
   }
   const tomM = raw.match(/明日[はにも]?\s*([^\n。、！？]{4,20})/);
   if (tomM && actions.length < 2) actions.push(`明日の${tomM[1].trim()}について、必要な資材・人員・段取りを事前に確認する`);
+  if (/資材(来ない|足りない|不足)|搬入(遅れ|来ない)/.test(raw) && !actions.some(a=>a.includes('資材'))) {
+    actions.push('資材の搬入状況を手配先に確認し、翌日の工程に支障が出ないよう代替手配の可否を確認する');
+  }
+  if (/機材(故障|不具合|壊れ)/.test(raw) && !actions.some(a=>a.includes('機材'))) {
+    actions.push('機材の修理・代替手配について翌朝一番で確認し、工程への影響を最小化する');
+  }
+  if (/近隣.*クレーム|クレーム.*近隣/.test(raw) && !actions.some(a=>a.includes('近隣'))) {
+    actions.push('近隣への対応内容を元請け・監督に報告し、再発防止策と作業時間帯の調整を相談する');
+  }
+  if (/行政.*指摘|検査.*不合格/.test(raw) && !actions.some(a=>a.includes('検査'))) {
+    actions.push('行政検査での指摘事項を整理し、是正・補修の方針と再検査日程を監督と確認する');
+  }
   if (actions.length === 0) {
-    const defaults = { construction:'翌日の工程に必要な資材・機材と作業員の配置を朝礼前に確認する', tech:'本日の作業内容をタスク管理ツールに反映し、翌日対応のプライオリティを整理する', office:'本日の商談・打ち合わせ内容を整理し、フォローアップが必要な案件を優先度順に洗い出す', general:'本日の進捗を踏まえ、翌日対応が必要な案件の優先順位を確認する' };
-    actions.push(defaults[domain]);
+    const defaults = {
+      construction: '翌日の工程に必要な資材・機材と作業員の配置を朝礼前に確認する',
+      manufacturing: '本日の生産実績をラインリーダーに報告し、翌日の段取りと品質基準を確認する',
+      tech: '本日の作業内容をタスク管理ツールに反映し、翌日対応のプライオリティを整理する',
+      office: '本日の商談・打ち合わせ内容を整理し、フォローアップが必要な案件を優先度順に洗い出す',
+      general: '本日の進捗を踏まえ、翌日対応が必要な案件の優先順位を確認する'
+    };
+    actions.push(defaults[domain] || defaults.general);
   }
   return actions.slice(0, 2);
 }
@@ -946,7 +1007,7 @@ function fillReport(raw) {
   const segs = raw.replace(/[！!？?。]/g,'\n').split('\n').map(s=>s.trim()).filter(s=>s.length>1);
   const rawTasks = [], issueSegs = [];
   const SKIP_PAT = /^(暑|寒|熱中症|ありがとう|感謝|助かっ|職人さん|ベテラン|みんな|お疲れ|休憩(増やし|多め|たっぷり)|ちょっと休ん|へとへと|疲れた|しんどかっ|つらかっ|きつかっ)/;
-  const ISSUE_PAT = /遅れ|遅延|押してる?|進まない|はかどらない|詰まった|手間取|ミス|失敗|間違え|やり直し|怒られ|叱られ|注意され|指摘(され|を受)|返事(ない|来ない|待ち)|連絡(ない|来ない)|回答待ち|わからない|判断できな|悪天候|ぬかるみ|最悪|ひどい|散々/;
+  const ISSUE_PAT = /遅れ|遅延|押してる?|進まない|はかどらない|詰まった|手間取|ミス|失敗|間違え|やり直し|怒られ|叱られ|注意され|指摘(され|を受)|返事(ない|来ない|待ち)|連絡(ない|来ない)|回答待ち|わからない|判断できな|悪天候|ぬかるみ|最悪|ひどい|散々|資材(来ない|足りない|不足)|機材(故障|不具合|壊れ)|人手(不足|足りない)|近隣.*クレーム|クレーム.*近隣|行政.*指摘|検査.*不合格|やり直し|搬入(遅れ|来ない)/;
   let period = null;
 
   for (const seg of segs) {

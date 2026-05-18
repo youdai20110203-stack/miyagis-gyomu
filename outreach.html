@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>営業メッセージテンプレ | Miyagi′s 業務（社内用）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--ink:#111827;--navy:#1c2f5e;--accent:#e8a020;--white:#fff;--off:#f7f8fb;--border:#e2e6f0;--muted:#6b7a99;--green:#16a34a;--r:10px;}
+    body{font-family:'Noto Sans JP',sans-serif;background:#dde4ee;color:var(--ink);padding:20px 12px;line-height:1.7;}
+    .wrap{max-width:680px;margin:0 auto;}
+    h1{font-size:18px;font-weight:900;color:var(--navy);margin-bottom:4px;}
+    .subtitle{font-size:12px;color:var(--muted);margin-bottom:24px;}
+    .conf-tag{background:#fee2e2;color:#991b1b;font-size:10px;font-weight:900;padding:3px 8px;border-radius:4px;margin-right:8px;}
+
+    /* タブ */
+    .tabs{display:flex;gap:4px;margin-bottom:0;border-bottom:2px solid var(--border);}
+    .tab{padding:9px 18px;font-size:12.5px;font-weight:700;border:none;background:transparent;cursor:pointer;color:var(--muted);border-radius:6px 6px 0 0;font-family:inherit;}
+    .tab.active{background:var(--white);color:var(--navy);border:2px solid var(--border);border-bottom:2px solid var(--white);margin-bottom:-2px;}
+
+    /* カード */
+    .card{background:var(--white);border-radius:0 var(--r) var(--r) var(--r);padding:20px;box-shadow:0 2px 12px rgba(28,47,94,.08);display:none;}
+    .card.active{display:block;}
+
+    /* ルール */
+    .rule{background:#fffbf2;border:1px solid #f5d48a;border-radius:var(--r);padding:14px 16px;margin-bottom:18px;font-size:12px;}
+    .rule strong{color:var(--navy);display:block;margin-bottom:6px;}
+    .rule ul{padding-left:18px;}
+    .rule li{margin:3px 0;}
+
+    /* テンプレ本文エリア */
+    .tmpl-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;margin-bottom:8px;}
+    .tmpl-box{background:var(--off);border:1.5px solid var(--border);border-radius:var(--r);padding:16px;font-size:13px;line-height:1.85;white-space:pre-wrap;margin-bottom:8px;position:relative;}
+    .tmpl-box .hi{background:#fef3c7;padding:0 2px;border-radius:3px;font-weight:700;cursor:text;}
+    .char-count{text-align:right;font-size:10.5px;color:var(--muted);margin-bottom:14px;}
+
+    /* コピーボタン */
+    .copy-btn{display:flex;align-items:center;gap:6px;background:var(--navy);color:#fff;border:none;padding:9px 18px;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:20px;}
+    .copy-btn:hover{background:#2a4480;}
+    .copy-btn svg{width:14px;height:14px;}
+    .toast{display:none;background:#16a34a;color:#fff;font-size:12px;padding:4px 12px;border-radius:100px;margin-left:8px;}
+    .toast.show{display:inline-block;}
+
+    /* カスタム行 */
+    .custom-sec{margin-bottom:20px;}
+    .custom-sec h3{font-size:12.5px;font-weight:900;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+    .custom-sec h3::before{content:'✏️';}
+    .custom-row{display:flex;gap:8px;margin-bottom:6px;}
+    .custom-row input{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;font-family:inherit;color:var(--ink);}
+    .custom-row input:focus{outline:2px solid var(--accent);border-color:transparent;}
+    .custom-row select{padding:9px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;background:var(--white);}
+    .apply-btn{background:var(--accent);color:var(--white);border:none;padding:9px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;}
+    .apply-btn:hover{background:#d4911a;}
+
+    /* NGリスト */
+    .ng-box{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px;margin-top:16px;font-size:12px;}
+    .ng-box strong{color:#991b1b;display:block;margin-bottom:6px;}
+    .ng-box ul{padding-left:18px;}
+    .ng-box li{margin:3px 0;color:#7f1d1d;}
+
+    /* バリエーション */
+    .var-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+    .var-card{background:var(--off);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;font-size:11.5px;line-height:1.8;cursor:pointer;transition:border-color .2s;}
+    .var-card:hover{border-color:var(--accent);}
+    .var-card .var-label{font-size:10px;font-weight:900;color:var(--muted);margin-bottom:6px;letter-spacing:.08em;}
+    .var-card.selected{border-color:var(--navy);background:#eef3ff;}
+
+    @media(max-width:600px){
+      .var-grid{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div style="display:flex;align-items:center;margin-bottom:4px;">
+    <span class="conf-tag">社内秘</span>
+    <h1>営業メッセージテンプレート</h1>
+  </div>
+  <div class="subtitle">HP問い合わせフォーム・メール用 / 宮城県内中小企業向け</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('form')">📋 フォーム送信用（短文）</button>
+    <button class="tab" onclick="switchTab('email')">📧 メール用（長文）</button>
+    <button class="tab" onclick="switchTab('tips')">💡 使い方・注意点</button>
+  </div>
+
+  <!-- ══════════ フォーム送信用 ══════════ -->
+  <div class="card active" id="tab-form">
+    <div class="rule">
+      <strong>📏 フォーム送信のルール</strong>
+      <ul>
+        <li>文字数は<strong>300〜500字</strong>が目安（長すぎると読まれない）</li>
+        <li>黄色い部分（カスタム行）は<strong>その会社専用の1文</strong>を必ず入れる</li>
+        <li>同じ文を複数社に送るのは効果が激減する</li>
+        <li>送信後は必ずスプレッドシートに記録する</li>
+      </ul>
+    </div>
+
+    <div class="custom-sec">
+      <h3>カスタム行を入力してから使う</h3>
+      <div class="custom-row">
+        <input type="text" id="companyName" placeholder="会社名（例：○○建設株式会社）">
+        <select id="industry">
+          <option value="construction">建設業</option>
+          <option value="manufacturing">製造業</option>
+          <option value="general">その他</option>
+        </select>
+      </div>
+      <div class="custom-row">
+        <input type="text" id="customLine" placeholder="その会社専用の一言（例：HPで○○新築工事の施工事例を拝見しました）">
+        <button class="apply-btn" onclick="applyCustomForm()">反映 →</button>
+      </div>
+    </div>
+
+    <div class="tmpl-label">▼ 送信用テキスト（コピーして貼り付け）</div>
+    <div class="tmpl-box" id="formText">突然のご連絡、大変失礼いたします。
+
+宮城県で活動している高校生2人組のプロジェクト「Miyagi′s 業務」と申します。
+
+【カスタム行：会社専用の一言をここに入れる】
+
+御社のような建設会社の社長様が、日報・見積もり・請求書などの事務作業に多くの時間を取られているという課題をよく耳にします。私たちは、AIを活用してこれらの業務時間を30〜75%削減できるツールを開発・提供しています。
+
+1ヶ月の無料お試し期間もございます。30分だけお時間いただけませんか？
+
+デモ：miyagis-gyomu.vercel.app
+高校生2人が地元宮城のために本気で取り組んでいます。どうぞよろしくお願いいたします。</div>
+    <div class="char-count" id="formCharCount">— 文字</div>
+    <button class="copy-btn" onclick="copyText('formText','formToast')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      コピーする
+      <span class="toast" id="formToast">コピーしました</span>
+    </button>
+
+    <div class="tmpl-label">▼ 件名（メールフォームに件名欄がある場合）</div>
+    <div class="tmpl-box" style="padding:10px 14px;font-size:13px;">【ご提案】宮城の高校生2人が作った業務効率化AIツールのご紹介</div>
+  </div>
+
+  <!-- ══════════ メール用 ══════════ -->
+  <div class="card" id="tab-email">
+    <div class="rule">
+      <strong>📏 メール送信のルール</strong>
+      <ul>
+        <li>件名は変えない（開封率が高い）</li>
+        <li>カスタム行（2か所）は<strong>必ず</strong>その会社を調べて書く</li>
+        <li>返信が来たら<strong>24時間以内</strong>に返す（これだけで好印象）</li>
+        <li>CC・BCCを間違えると個人情報漏洩事故になる。1通ずつ送ること</li>
+      </ul>
+    </div>
+
+    <div class="custom-sec">
+      <h3>カスタム行を入力してから使う</h3>
+      <div class="custom-row">
+        <input type="text" id="emailCompany" placeholder="会社名">
+        <input type="text" id="emailRep" placeholder="社長のお名前（分かれば）" style="max-width:160px;">
+      </div>
+      <div class="custom-row">
+        <input type="text" id="emailCustomLine1" placeholder="冒頭カスタム（例：HP拝見しました。○○工事の施工事例が印象的でした）">
+        <button class="apply-btn" onclick="applyCustomEmail()">反映 →</button>
+      </div>
+    </div>
+
+    <div class="tmpl-label">▼ 件名</div>
+    <div class="tmpl-box" style="padding:10px 14px;font-size:13px;">【ご提案】高校生2人が開発した業務効率化AIツール — 宮城の建設会社様へ</div>
+
+    <div class="tmpl-label" style="margin-top:12px;">▼ 本文（コピーして貼り付け）</div>
+    <div class="tmpl-box" id="emailText">【会社名】
+【社長のお名前、または】ご担当者様
+
+突然のメール、誠に失礼いたします。
+宮城県内で活動しております「Miyagi′s 業務」代表の佐藤優大と申します。
+
+【カスタム行：HBの内容や事業についての一言】
+
+私たちは宮城の中小企業の皆様が、日報・見積もり・請求書といった事務作業に毎日多くの時間を取られているという課題を解決したいと考え、AIを活用した業務効率化ツールを開発しました。
+
+■ できること
+・日報：殴り書きのメモから整った日報を自動生成（建設・製造・事務など業種別対応）
+・見積もり：工事種別と面積を選ぶだけで概算金額と明細を即出力
+・請求書：見積もりから1クリックで請求書を作成、入金管理まで一括
+・顧客管理：一度登録した顧客情報をすべての機能で使い回し
+
+■ 費用
+・まず1ヶ月、完全無料でお試しいただけます
+・継続ご利用の場合は導入費98,000円（税込）、月額9,990円（税込）
+
+実際の動作をデモサイトでご確認いただけます。
+→ miyagis-gyomu.vercel.app
+
+30分ほどお時間をいただき、御社の課題をお聞かせいただけますでしょうか。
+高校生2人が宮城のために本気で取り組んでいます。何卒よろしくお願いいたします。
+
+────────────────────
+Miyagi′s 業務
+代表　佐藤 優大 / 共同代表　黒澤 颯翔
+miyagis-gyomu.vercel.app
+────────────────────</div>
+    <div class="char-count" id="emailCharCount">— 文字</div>
+    <button class="copy-btn" onclick="copyText('emailText','emailToast')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+      コピーする
+      <span class="toast" id="emailToast">コピーしました</span>
+    </button>
+  </div>
+
+  <!-- ══════════ 使い方・注意点 ══════════ -->
+  <div class="card" id="tab-tips">
+    <div class="rule" style="background:#f0f9ff;border-color:#7dd3fc;">
+      <strong style="color:#0369a1;">🎯 1日の目標ペース（平日）</strong>
+      <ul>
+        <li><strong>HPリサーチ＋メモ</strong>：1社あたり5分 × 10社 = 50分</li>
+        <li><strong>カスタム行作成＋送信</strong>：1社あたり3分 × 10社 = 30分</li>
+        <li><strong>合計：1日80分、10社に接触できる</strong></li>
+        <li>2人でやれば1日20社。2週間で<strong>200社接触</strong>が現実的</li>
+      </ul>
+    </div>
+
+    <div class="rule" style="margin-top:14px;">
+      <strong>📊 管理スプレッドシートの列（Googleスプレッドシートで管理）</strong>
+      <ul>
+        <li>A列: 会社名 / B列: 担当者名 / C列: 連絡先（URL or メール）</li>
+        <li>D列: 送信日 / E列: 送信方法（フォーム/メール/電話）</li>
+        <li>F列: 返信状況（未返信/返信あり/NG/商談中/成約）</li>
+        <li>G列: 次のアクション / H列: メモ</li>
+      </ul>
+    </div>
+
+    <div class="rule" style="background:#ecfdf5;border-color:#a7f3d0;margin-top:14px;">
+      <strong style="color:#065f46;">✅ カスタム行の作り方（具体例）</strong>
+      <ul>
+        <li>HPの施工事例ページを見て → 「○○の新築工事の事例、印象的でした」</li>
+        <li>会社の所在地から → 「石巻市内で長く活動されているんですね」</li>
+        <li>代表者メッセージから → 「地域の職人を育てるという姿勢に共感しています」</li>
+        <li>採用情報から → 「現場スタッフを積極採用されているとのこと、現場管理の効率化のお役に立てそうです」</li>
+      </ul>
+    </div>
+
+    <div class="ng-box">
+      <strong>⚠ 絶対やらないこと</strong>
+      <ul>
+        <li>同じ文をコピペしてカスタム行だけ変えるのはOKだが、<strong>カスタム行を書かずに送るのはNG</strong>（スパム扱いされる）</li>
+        <li>一度断られた会社に<strong>2週間以内に再送しない</strong>（印象が最悪になる）</li>
+        <li>「高校生なので安くします」という書き方はしない（価値を下げる）</li>
+        <li>DM・フォームの<strong>自動送信ツールは使わない</strong>（利用規約違反になる場合あり）</li>
+      </ul>
+    </div>
+
+    <div class="rule" style="margin-top:14px;background:#faf5ff;border-color:#c4b5fd;">
+      <strong style="color:#5b21b6;">📅 返信が来たときの対応フロー</strong>
+      <ul>
+        <li>返信から<strong>24時間以内</strong>に返す（「ありがとうございます。いつがご都合よいですか？」）</li>
+        <li>日程調整できたら → 訪問前に<strong>sales-script.html</strong>で台本確認</li>
+        <li>「興味ない」「結構です」という返信には → 「ご確認いただきありがとうございました」だけ返して終了（引き下がりがきれい）</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function countChars(id, countId) {
+  const el = document.getElementById(id);
+  const cnt = document.getElementById(countId);
+  if (!el || !cnt) return;
+  cnt.textContent = el.innerText.length + ' 文字';
+  const n = el.innerText.length;
+  cnt.style.color = n > 600 ? '#b91c1c' : n > 400 ? '#d97706' : '#16a34a';
+}
+
+function copyText(id, toastId) {
+  const text = document.getElementById(id).innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const t = document.getElementById(toastId);
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  });
+}
+
+function applyCustomForm() {
+  const company = document.getElementById('companyName').value.trim();
+  const industry = document.getElementById('industry').value;
+  const custom = document.getElementById('customLine').value.trim();
+  const indLabel = industry === 'construction' ? '建設会社' : industry === 'manufacturing' ? '製造業の会社' : '会社';
+
+  const text = `突然のご連絡、大変失礼いたします。
+
+宮城県で活動している高校生2人組のプロジェクト「Miyagi′s 業務」と申します。
+
+${custom || '【ここに会社専用の一言を入れてください】'}
+
+御社のような${indLabel}の社長様が、日報・見積もり・請求書などの事務作業に多くの時間を取られているという課題をよく耳にします。私たちは、AIを活用してこれらの業務時間を30〜75%削減できるツールを開発・提供しています。
+
+1ヶ月の無料お試し期間もございます。30分だけお時間いただけませんか？
+
+デモ：miyagis-gyomu.vercel.app
+高校生2人が地元宮城のために本気で取り組んでいます。どうぞよろしくお願いいたします。`;
+
+  document.getElementById('formText').innerText = text;
+  countChars('formText', 'formCharCount');
+}
+
+function applyCustomEmail() {
+  const company = document.getElementById('emailCompany').value.trim() || '【会社名】';
+  const rep = document.getElementById('emailRep').value.trim();
+  const repLine = rep ? `${rep} 様` : 'ご担当者様';
+  const custom = document.getElementById('emailCustomLine1').value.trim() || '【カスタム行：HPの内容や事業についての一言】';
+
+  const text = `${company}
+${repLine}
+
+突然のメール、誠に失礼いたします。
+宮城県内で活動しております「Miyagi′s 業務」代表の佐藤優大と申します。
+
+${custom}
+
+私たちは宮城の中小企業の皆様が、日報・見積もり・請求書といった事務作業に毎日多くの時間を取られているという課題を解決したいと考え、AIを活用した業務効率化ツールを開発しました。
+
+■ できること
+・日報：殴り書きのメモから整った日報を自動生成（建設・製造・事務など業種別対応）
+・見積もり：工事種別と面積を選ぶだけで概算金額と明細を即出力
+・請求書：見積もりから1クリックで請求書を作成、入金管理まで一括
+・顧客管理：一度登録した顧客情報をすべての機能で使い回し
+
+■ 費用
+・まず1ヶ月、完全無料でお試しいただけます
+・継続ご利用の場合は導入費98,000円（税込）、月額9,990円（税込）
+
+実際の動作をデモサイトでご確認いただけます。
+→ miyagis-gyomu.vercel.app
+
+30分ほどお時間をいただき、御社の課題をお聞かせいただけますでしょうか。
+高校生2人が宮城のために本気で取り組んでいます。何卒よろしくお願いいたします。
+
+────────────────────
+Miyagi′s 業務
+代表　佐藤 優大 / 共同代表　黒澤 颯翔
+miyagis-gyomu.vercel.app
+────────────────────`;
+
+  document.getElementById('emailText').innerText = text;
+  countChars('emailText', 'emailCharCount');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  countChars('formText', 'formCharCount');
+  countChars('emailText', 'emailCharCount');
+});
+</script>
+</body>
+</html>
