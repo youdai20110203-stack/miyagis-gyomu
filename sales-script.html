@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Miyagi′s 業務 | 営業台本（社内用）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --ink:#111827; --navy:#1c2f5e; --navy-mid:#2a4480;
+      --accent:#e8a020; --accent2:#f0c060;
+      --red:#c62828; --green:#16a34a;
+      --white:#fff; --off:#f7f8fb; --border:#e2e6f0; --muted:#6b7a99;
+    }
+    body { font-family:'Noto Sans JP',sans-serif; background:#dde4ee; color:var(--ink); padding:24px 12px; line-height:1.7; }
+    .sheet { max-width:720px; margin:0 auto; background:var(--white); border-radius:8px; box-shadow:0 4px 24px rgba(0,0,0,.12); padding:32px 30px 36px; }
+
+    .doc-head { border-bottom:3px solid var(--navy); padding-bottom:14px; margin-bottom:24px; }
+    .doc-eyebrow { font-size:11px; font-weight:700; color:var(--muted); letter-spacing:.12em; }
+    .doc-title { font-size:24px; font-weight:900; margin:6px 0 4px; }
+    .doc-sub { font-size:12.5px; color:var(--muted); }
+    .doc-meta { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-top:10px; }
+    .doc-meta strong { color:var(--ink); }
+
+    .conf-tag { display:inline-block; background:#fee2e2; color:#991b1b; font-size:10px; font-weight:900; padding:3px 9px; border-radius:4px; letter-spacing:.05em; }
+
+    h2 { font-size:17px; font-weight:900; color:var(--navy); margin:32px 0 12px; padding:8px 14px; background:linear-gradient(90deg,#eef3ff,transparent); border-left:5px solid var(--navy); display:flex; align-items:center; gap:8px; }
+    h2 .num { background:var(--navy); color:var(--accent); width:24px; height:24px; border-radius:50%; font-size:11px; display:flex; align-items:center; justify-content:center; }
+
+    h3 { font-size:13.5px; font-weight:900; margin:18px 0 8px; color:var(--ink); display:flex; align-items:center; gap:6px; }
+    h3::before { content:'▎'; color:var(--accent); font-weight:900; }
+
+    p { font-size:13px; margin-bottom:10px; }
+
+    .script { background:#fffdf5; border-left:3px solid var(--accent); padding:12px 14px; border-radius:0 6px 6px 0; margin:8px 0 14px; }
+    .script-label { font-size:10.5px; font-weight:900; color:var(--accent); letter-spacing:.1em; margin-bottom:4px; }
+    .script p { font-size:13px; margin:0 0 6px; }
+    .script p:last-child { margin-bottom:0; }
+    .script em { font-style:normal; background:#fef3c7; padding:0 3px; font-weight:700; }
+
+    .listen { background:#f0f9ff; border:1px dashed #7dd3fc; padding:12px 14px; border-radius:6px; margin:8px 0 14px; }
+    .listen strong { display:block; font-size:11px; color:#0369a1; margin-bottom:5px; letter-spacing:.05em; }
+    .listen ul { margin:0; padding-left:20px; }
+    .listen li { font-size:12.5px; margin:3px 0; }
+
+    .ng { background:#fef2f2; border:1px solid #fecaca; padding:12px 14px; border-radius:6px; margin:14px 0; }
+    .ng strong { display:block; color:#991b1b; font-size:11.5px; margin-bottom:6px; }
+    .ng ul { margin:0; padding-left:20px; }
+    .ng li { font-size:12px; margin:3px 0; color:#7f1d1d; }
+
+    .tip { background:#ecfdf5; border:1px solid #a7f3d0; padding:12px 14px; border-radius:6px; margin:10px 0; font-size:12.5px; }
+    .tip strong { color:#065f46; }
+
+    .faq { margin-top:10px; }
+    .faq-item { border-bottom:1px solid var(--border); padding:12px 0; }
+    .faq-q { font-size:12.5px; font-weight:700; color:var(--navy); margin-bottom:6px; display:flex; gap:6px; }
+    .faq-q::before { content:'Q.'; color:var(--accent); font-weight:900; }
+    .faq-a { font-size:12px; color:var(--ink); padding-left:16px; line-height:1.75; }
+    .faq-a strong { color:var(--navy); }
+
+    .flow-table { width:100%; border-collapse:collapse; margin:10px 0; }
+    .flow-table th, .flow-table td { border:1px solid var(--border); padding:8px 10px; font-size:12px; text-align:left; vertical-align:top; }
+    .flow-table th { background:var(--navy); color:var(--white); font-weight:700; }
+    .flow-table tr:nth-child(even) { background:var(--off); }
+
+    .key-num { background:#fff7ed; border:1px solid #fdba74; padding:10px 14px; border-radius:6px; margin:10px 0; font-size:13px; }
+    .key-num strong { color:#9a3412; font-size:15px; }
+
+    @media print {
+      body { background:var(--white); padding:0; }
+      .sheet { box-shadow:none; max-width:none; padding:14mm 12mm; border-radius:0; }
+      .print-hide { display:none !important; }
+      h2 { page-break-after:avoid; }
+      @page { size:A4; margin:0; }
+    }
+    @media (max-width:700px) {
+      body { padding:8px 4px; }
+      .sheet { padding:20px 16px; }
+      .doc-title { font-size:19px; }
+      h2 { font-size:14px; padding:7px 10px; }
+    }
+    .print-btn { position:fixed; bottom:20px; right:20px; background:var(--navy); color:var(--white); border:none; padding:14px 22px; border-radius:100px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 18px rgba(28,47,94,.3); z-index:99; }
+    .print-btn:hover { background:var(--navy-mid); }
+  </style>
+</head>
+<body>
+  <button class="print-btn print-hide" onclick="window.print()">📄 PDF保存 / 印刷</button>
+
+  <div class="sheet">
+    <div class="doc-head">
+      <div class="doc-eyebrow"><span class="conf-tag">社内秘</span> &nbsp; 営業ガイド v1.0</div>
+      <div class="doc-title">Miyagi′s 業務 — 営業台本</div>
+      <div class="doc-sub">宮城県中小企業（建設業中心）社長との初回ヒアリング用</div>
+      <div class="doc-meta">
+        <span>対象：従業員 5〜30名 / 売上 1〜5億円規模</span>
+        <span>所要時間：<strong>30〜45分</strong></span>
+      </div>
+    </div>
+
+    <p>このドキュメントは、社長と初めてお会いするときの<strong>会話の順番と話し方</strong>をまとめたものです。<br>暗記する必要はありません。<strong>「順番」と「聞くべき質問」</strong>だけ頭に入れて、自然に話してください。</p>
+
+    <!-- ━━━━━━ 訪問前の準備 ━━━━━━ -->
+    <h2><span class="num">0</span>訪問前の準備（前日まで）</h2>
+
+    <h3>持ち物チェックリスト</h3>
+    <ul style="padding-left:20px; font-size:12.5px;">
+      <li>スマホ（デモ画面を見せる用） — 充電満タン、明るさMAX</li>
+      <li>営業1枚資料（<code>sales.html</code> のPDF） — 印刷して2部</li>
+      <li>名刺（無ければ手書きメモ用紙でOK）</li>
+      <li>メモ帳とペン（社長の話をその場でメモする — これだけで好印象）</li>
+      <li>会社情報を事前に検索（HP・施工事例があれば必ず見る）</li>
+    </ul>
+
+    <h3>事前リサーチで見るポイント</h3>
+    <ul style="padding-left:20px; font-size:12.5px;">
+      <li>会社のホームページ：従業員数・主要事業・代表者の名前</li>
+      <li>施工事例：どんな工事を多くやっているか（戸建 / 公共 / リフォーム など）</li>
+      <li>創業年数：「○○年も続いているんですね」と一言入れる材料になる</li>
+    </ul>
+
+    <!-- ━━━━━━ 1. アイスブレイク ━━━━━━ -->
+    <h2><span class="num">1</span>アイスブレイク（最初の3分）</h2>
+
+    <p>事前に決めておく台詞より、<strong>その場の空気と社長の様子</strong>で話す内容を変える。</p>
+
+    <div class="script">
+      <div class="script-label">▼ 開口一番</div>
+      <p>「本日はお忙しい中、お時間いただきありがとうございます。<em>高校生の佐藤と黒澤と申します</em>。」</p>
+      <p>「実は私たち、宮城の中小企業の皆さまを<em>AIで応援したい</em>という思いで動いていまして、今日は事業のご紹介とお話を伺いに参りました。」</p>
+    </div>
+
+    <div class="tip"><strong>💡 ポイント：</strong>「高校生」を最初に言ってしまう。隠すと後でバレて気まずくなる。先に出すと「若いのにしっかりしてる」という印象に変わる。</div>
+
+    <h3>アイスブレイク話題（どれか1つでOK）</h3>
+    <ul style="padding-left:20px; font-size:12.5px;">
+      <li>「<strong>○年も続いている会社</strong>って凄いですね、地元の力ですね」</li>
+      <li>「HPで施工事例を拝見しました、<strong>○○工事</strong>は地域でも有名ですよね」</li>
+      <li>「今日は急に冷えますね／暑いですね」（天気は最後の手段）</li>
+    </ul>
+
+    <!-- ━━━━━━ 2. ヒアリング ━━━━━━ -->
+    <h2><span class="num">2</span>ヒアリング（10〜15分・最重要）</h2>
+
+    <p><strong>ここが一番大事。デモは後でいい。まず聞く。</strong></p>
+    <p>社長は普段から「いきなりサービス売りつけられる」のに疲れている。先にじっくり聞くだけで、それだけで他の営業と差別化できる。</p>
+
+    <div class="script">
+      <div class="script-label">▼ 切り出し</div>
+      <p>「サービスの話の前に、ぜひ社長のお話を聞かせていただきたくて。<em>もし今、業務で一番時間かかってる作業</em>って、なんですかね？」</p>
+    </div>
+
+    <div class="listen">
+      <strong>聞くべき質問（順番通りに）</strong>
+      <ul>
+        <li>① 一番時間かかってる作業は何ですか？</li>
+        <li>② それは誰が、何時頃にやってるんですか？</li>
+        <li>③ 日報や報告書って、どんな風に作ってますか？</li>
+        <li>④ 見積もりや請求書は、どなたが担当されてます？</li>
+        <li>⑤ 困ってる事、面倒くさいなって思う事ってありますか？</li>
+        <li>⑥ お客さんの情報って、どこで管理されてますか？</li>
+        <li>⑦ 「AI使ってみたい」って思ったことありますか？（理由も）</li>
+      </ul>
+    </div>
+
+    <div class="tip"><strong>💡 メモ取る：</strong>社長の言葉を<strong>そのまま</strong>メモする。後で提案書に活かすときに「先日おっしゃってた『○○』の件ですが」と返せると、刺さる。</div>
+
+    <div class="ng">
+      <strong>⚠ ここで絶対やらないこと</strong>
+      <ul>
+        <li>社長の話を遮って自分の話をする</li>
+        <li>「それうちのサービスで解決できます！」と即答する（営業臭で引かれる）</li>
+        <li>専門用語を使う（DX、SaaS、クラウド、API、etc）</li>
+      </ul>
+    </div>
+
+    <!-- ━━━━━━ 3. デモ実演 ━━━━━━ -->
+    <h2><span class="num">3</span>デモ実演（10分）</h2>
+
+    <p>ヒアリングで聞いた「困りごと」に直結する機能だけ見せる。全部見せない。</p>
+
+    <h3>デモの順序（社長の困りごと別）</h3>
+
+    <table class="flow-table">
+      <tr><th>社長が言ったこと</th><th>見せる機能</th><th>見せる時の一言</th></tr>
+      <tr><td>「日報に時間かかる」</td><td>日報AI生成<br>(現場メモ → 整形済み日報)</td><td>「メモだけ書いてもらえば、こうやって整います」</td></tr>
+      <tr><td>「見積もりが面倒」</td><td>見積もり自動計算<br>(工事種別 → 即金額)</td><td>「単価さえ決めれば、誰でも同じ精度で出せます」</td></tr>
+      <tr><td>「請求書出すのに時間が」</td><td>見積もり→請求書ワンクリック</td><td>「見積もり通れば、ボタン1つで請求書になります」</td></tr>
+      <tr><td>「顧客情報がバラバラ」</td><td>顧客マスタ + 履歴</td><td>「一度登録すれば、どこでも同じ顧客名から呼び出せます」</td></tr>
+    </table>
+
+    <div class="script">
+      <div class="script-label">▼ 日報デモを見せるとき（一番刺さりやすい）</div>
+      <p>「例えば、現場で<em>『午前 型枠 3人 暑くて休憩多め』</em>みたいなメモを書きますよね？」</p>
+      <p>「これを入力して……ボタン押すと、ほら、<em>こうやって整った日報になるんです</em>。」</p>
+      <p>「『暑さで休憩多め』っていう一言も、ちゃんと『熱中症対策のため休憩を増やした』って書き直してくれます。」</p>
+    </div>
+
+    <div class="tip"><strong>💡 体験させる：</strong>「社長、ちょっと触ってみますか？」と必ずスマホを渡す。<strong>自分の手で動かす</strong>と熱量が変わる。</div>
+
+    <!-- ━━━━━━ 4. 料金提示 ━━━━━━ -->
+    <h2><span class="num">4</span>料金とプラン提示（5分）</h2>
+
+    <p>営業1枚資料（紙）を渡しながら説明する。</p>
+
+    <div class="script">
+      <div class="script-label">▼ 料金の切り出し方</div>
+      <p>「今、見ていただいた機能を御社の業務に合わせてカスタマイズして、操作のレクチャーまで含めて、こちらの料金でご案内しています。」</p>
+      <p>（料金表を見せる）</p>
+      <p>「ただ、初めての方には、<em>1ヶ月の無料お試し期間</em>をご用意しているんです。費用ゼロで使ってみていただいて、<em>合わなければそれで終わり</em>で大丈夫です。」</p>
+    </div>
+
+    <div class="key-num">
+      <strong>覚える数字：</strong>導入費 80,000円 / 月額 9,000円<br>
+      &nbsp;&nbsp;→ 月額にすると <strong>1日あたり300円</strong>。「コーヒー1杯ぐらいですね」と言える金額。
+    </div>
+
+    <!-- ━━━━━━ 5. クロージング ━━━━━━ -->
+    <h2><span class="num">5</span>クロージング（5分）</h2>
+
+    <p>今日その場で契約取らない。<strong>「次のアクション」を必ず決めて帰る</strong>。</p>
+
+    <div class="script">
+      <div class="script-label">▼ クロージングの台詞</div>
+      <p>「本日のお話を踏まえて、御社の業務に合わせた<em>カスタマイズ案</em>を作って、来週もう一度お時間いただけませんか？」</p>
+      <p>「お試し開始は、その時にゆっくり決めていただければと思います。」</p>
+    </div>
+
+    <div class="tip"><strong>💡 目標：</strong>初回訪問のゴールは「契約」じゃなく「次回アポ」。<strong>再訪問が決まれば成功率は跳ね上がる。</strong></div>
+
+    <!-- ━━━━━━ FAQ ━━━━━━ -->
+    <h2><span class="num">6</span>想定質問とその答え</h2>
+
+    <div class="faq">
+      <div class="faq-item">
+        <div class="faq-q">高校生で大丈夫なの？倒産したらどうするの？</div>
+        <div class="faq-a">「ご心配ごもっともです。<strong>データはすべて社長のスマホに保存される仕組み</strong>で、私たちのサーバーに依存していません。万が一私たちが続けられなくなっても、データは残りますし、契約書にも記載しています。」</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">それ、Excelで十分じゃない？</div>
+        <div class="faq-a">「Excelもいいんですが、<strong>毎回1から書く時間</strong>と<strong>関数間違えるリスク</strong>があります。私たちのツールは<strong>書くべき項目が決まっていて、AIが文章を考えてくれる</strong>ので、ベテランも新人も同じ品質で出せます。」</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">kintoneとかANDPADと何が違うの？</div>
+        <div class="faq-a">「あちらは大企業向けで多機能ですが、<strong>月数万円</strong>かかります。私たちは『中小企業が本当に必要な機能だけ』に絞って、<strong>月9,000円</strong>で出しています。あと、地元の私たちが<strong>直接サポート</strong>します。」</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">うちはアナログでやってるからいいよ</div>
+        <div class="faq-a">「無理にデジタルに変える必要はないと思います。ただ、<strong>若い職人さんが入ったとき</strong>、紙の引き継ぎが難しいって悩みがあれば、その時に思い出してもらえれば嬉しいです。」（押し売りしない）</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">セキュリティは大丈夫？</div>
+        <div class="faq-a">「データは社長のスマホに保存されます。クラウドに上げる必要があるときも、<strong>社長のメールアドレスにバックアップを送る</strong>仕組みで、第三者は触れません。」</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">私はPC・スマホ苦手だよ</div>
+        <div class="faq-a">「<strong>そのために月1の訪問サポートが含まれています</strong>。最初の1ヶ月はLINEでもいつでも質問してください。実際に使われているのは、社長より<strong>事務員さんや息子さん</strong>のケースが多いです。」</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">他社にも提案してるの？</div>
+        <div class="faq-a">「はい、宮城の何社かと並行してお話させていただいています。<strong>地域全体を盛り上げたい</strong>のが目的なので、独占とかは考えていません。」</div>
+      </div>
+    </div>
+
+    <!-- ━━━━━━ NGワード集 ━━━━━━ -->
+    <h2><span class="num">7</span>使わない言葉リスト</h2>
+
+    <div class="ng">
+      <strong>⚠ これらの言葉は社長の前で使わない</strong>
+      <ul>
+        <li>DX、デジタルトランスフォーメーション、SaaS、クラウド、API、サブスク</li>
+        <li>「御社」「弊社」（会話で硬すぎる。「○○さん」「うち」を使う）</li>
+        <li>「絶対」「必ず」「100%」（過剰約束は信用失う）</li>
+        <li>「他社さんは……」と競合を悪く言う（社長は嫌います）</li>
+        <li>「これは凄いんです！」（売り込みの匂い。淡々と「こういう機能があります」と言う）</li>
+      </ul>
+    </div>
+
+    <!-- ━━━━━━ 訪問後 ━━━━━━ -->
+    <h2><span class="num">8</span>訪問後（その日のうちに）</h2>
+
+    <ul style="padding-left:20px; font-size:12.5px;">
+      <li>当日中に<strong>お礼のメッセージ</strong>（LINE or メール）：「本日はありがとうございました。お話伺った○○の件、提案書にまとめます」</li>
+      <li>聞いた内容を<strong>カスタマイズメモ</strong>として整理（次回提案書のベース）</li>
+      <li>2人で振り返り：上手くいった点 / 詰まった点</li>
+      <li>3日以内に<strong>提案資料</strong>を送る（早い方が勝つ）</li>
+    </ul>
+
+    <div class="tip" style="margin-top:20px;"><strong>📞 緊急時：</strong>その場で答えられない質問が来たら、「持ち帰って正確にお調べして、明日までにお返事します」で全く問題ない。<strong>分からないことを分かったフリしない</strong>のが信頼の元。</div>
+
+    <hr style="margin:30px 0; border:none; border-top:1px dashed var(--border);">
+    <p style="font-size:11px; color:var(--muted); text-align:center;">Miyagi′s 業務 営業ガイド v1.0 / 社内専用 / 配布禁止</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ご提案・お見積書テンプレート | Miyagi′s 業務</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    :root {
+      --ink:#111827; --navy:#1c2f5e; --navy-mid:#2a4480;
+      --accent:#e8a020;
+      --white:#fff; --off:#f7f8fb; --border:#d4dae6; --muted:#5a6b8c;
+    }
+    body { font-family:'Noto Sans JP',sans-serif; background:#dde4ee; color:var(--ink); padding:24px 12px; line-height:1.7; }
+    .doc { width:210mm; min-height:297mm; margin:0 auto 24px; background:var(--white); padding:18mm 18mm 16mm; box-shadow:0 4px 24px rgba(0,0,0,.12); position:relative; }
+    .doc + .doc { page-break-before:always; }
+
+    /* タイトル */
+    .doc-title { font-family:'Noto Serif JP',serif; font-size:28px; font-weight:900; text-align:center; letter-spacing:.2em; padding-bottom:8px; margin-bottom:8px; border-bottom:2px solid var(--ink); }
+    .doc-date { text-align:right; font-size:11.5px; color:var(--muted); margin-bottom:24px; }
+
+    /* 宛先 + 発行元 */
+    .head-grid { display:grid; grid-template-columns:1.2fr 1fr; gap:28px; margin-bottom:28px; }
+    .head-to { padding-bottom:6px; border-bottom:1px solid var(--ink); }
+    .head-to-name { font-size:18px; font-weight:700; min-height:32px; }
+    .head-to-name::after { content:' 御中'; font-size:13px; color:var(--muted); }
+    .head-to-rep { font-size:13px; margin-top:6px; color:var(--muted); }
+    .head-to-rep input { font-size:13px; color:var(--ink); border:none; outline:none; font-family:inherit; padding:0; min-width:60%; }
+
+    .head-from { font-size:11.5px; line-height:1.85; }
+    .head-from .name { font-size:13.5px; font-weight:700; color:var(--ink); }
+    .head-from .brand { font-size:14px; font-weight:900; color:var(--navy); margin-bottom:2px; }
+    .seal-box { display:inline-block; border:1.5px solid var(--accent); color:var(--accent); width:34px; height:34px; line-height:30px; text-align:center; font-size:10px; font-weight:700; border-radius:50%; margin-left:8px; vertical-align:middle; font-family:'Noto Serif JP',serif; }
+
+    /* 件名・合計 */
+    .subject { background:var(--off); border-left:5px solid var(--accent); padding:14px 18px; margin-bottom:24px; }
+    .subject-label { font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.1em; margin-bottom:4px; }
+    .subject-text { font-size:15px; font-weight:700; }
+
+    .total-row { display:grid; grid-template-columns:1fr auto; align-items:center; padding:16px 20px; background:var(--navy); color:var(--white); border-radius:6px; margin-bottom:24px; }
+    .total-label { font-size:12px; }
+    .total-label small { display:block; font-size:10px; opacity:.7; margin-top:2px; }
+    .total-val { font-family:'Noto Serif JP',serif; font-size:28px; font-weight:900; color:var(--accent); letter-spacing:.02em; }
+    .total-val small { font-size:14px; color:rgba(255,255,255,.7); margin-left:6px; }
+
+    /* 明細テーブル */
+    table.items { width:100%; border-collapse:collapse; margin-bottom:18px; font-size:12px; }
+    table.items th { background:var(--navy); color:var(--white); font-weight:700; padding:9px 10px; font-size:11.5px; text-align:left; letter-spacing:.05em; }
+    table.items td { padding:11px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+    table.items td.r { text-align:right; }
+    table.items td.c { text-align:center; }
+    table.items .desc { font-size:10.5px; color:var(--muted); margin-top:3px; line-height:1.6; }
+    table.items tr.sum td { background:var(--off); font-weight:700; font-size:12.5px; border-bottom:none; padding-top:14px; }
+    table.items tr.sum.grand td { background:var(--navy); color:var(--white); font-size:14px; }
+    table.items tr.sum.grand td.r { font-family:'Noto Serif JP',serif; font-size:16px; color:var(--accent); font-weight:900; }
+
+    /* 備考・条件 */
+    .notes { background:#fffaf0; border:1px solid #f5d48a; border-radius:6px; padding:12px 16px; font-size:11.5px; line-height:1.85; margin-bottom:20px; }
+    .notes strong { color:var(--navy); }
+    .notes ul { padding-left:18px; margin-top:5px; }
+    .notes li { margin:2px 0; }
+
+    /* セクション見出し */
+    h2 { font-family:'Noto Serif JP',serif; font-size:16px; font-weight:900; color:var(--navy); padding:7px 12px; background:linear-gradient(90deg,#eef3ff,transparent); border-left:5px solid var(--accent); margin:24px 0 10px; }
+
+    /* 契約条項 */
+    .clauses { font-size:11.5px; line-height:1.85; }
+    .clauses .article { margin-bottom:11px; }
+    .clauses .article-title { font-weight:700; color:var(--navy); margin-bottom:2px; }
+    .clauses ol { padding-left:22px; }
+    .clauses li { margin:2px 0; }
+
+    /* 署名欄 */
+    .sign-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:30px; }
+    .sign-box { border:1px solid var(--ink); padding:14px 16px 36px; border-radius:4px; position:relative; }
+    .sign-box-label { font-size:10.5px; font-weight:700; color:var(--muted); letter-spacing:.1em; margin-bottom:8px; }
+    .sign-row { font-size:11.5px; margin-bottom:8px; line-height:1.7; }
+    .sign-row span { display:inline-block; border-bottom:1px solid #999; min-width:160px; padding:0 6px; }
+    .sign-stamp { position:absolute; bottom:10px; right:14px; font-size:10px; color:var(--muted); }
+
+    /* フッタ */
+    .foot { position:absolute; bottom:10mm; left:18mm; right:18mm; padding-top:8px; border-top:1px solid var(--border); display:flex; justify-content:space-between; font-size:10px; color:var(--muted); }
+
+    /* 編集可能入力欄スタイル */
+    .ed { background:#fffbe7; border:1px dashed #d4b020; padding:1px 4px; border-radius:3px; font-family:inherit; font-size:inherit; color:var(--ink); }
+    .ed:focus { outline:2px solid var(--accent); background:#fff; }
+    [contenteditable=true]:empty::before { content:attr(data-ph); color:#bbb; }
+
+    @media print {
+      body { background:var(--white); padding:0; }
+      .doc { box-shadow:none; margin:0; }
+      .print-hide { display:none !important; }
+      .ed { background:transparent !important; border-color:transparent !important; }
+      @page { size:A4; margin:0; }
+    }
+    @media (max-width:700px) {
+      body { padding:8px 4px; }
+      .doc { width:auto; padding:14mm 10mm; min-height:auto; }
+      .doc-title { font-size:22px; }
+      .head-grid { grid-template-columns:1fr; gap:18px; }
+      .sign-grid { grid-template-columns:1fr; }
+      .foot { position:static; margin-top:24px; flex-direction:column; gap:4px; }
+    }
+    .print-btn { position:fixed; bottom:20px; right:20px; background:var(--navy); color:var(--white); border:none; padding:14px 22px; border-radius:100px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 18px rgba(28,47,94,.3); z-index:99; }
+    .print-btn:hover { background:var(--navy-mid); }
+    .help { position:fixed; top:20px; right:20px; background:#fef3c7; border:1px solid #fde68a; padding:10px 16px; border-radius:8px; font-size:12px; max-width:280px; box-shadow:0 4px 14px rgba(0,0,0,.1); z-index:98; }
+    .help strong { color:#92400e; display:block; margin-bottom:4px; }
+    .help-close { background:none; border:none; cursor:pointer; float:right; font-size:16px; color:#92400e; line-height:1; padding:0 0 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="help print-hide" id="helpBox">
+    <button class="help-close" onclick="document.getElementById('helpBox').remove()">×</button>
+    <strong>📝 使い方</strong>
+    黄色の枠は直接クリックして編集できます。<br>右下のボタンでPDF保存。
+  </div>
+  <button class="print-btn print-hide" onclick="window.print()">📄 PDF保存 / 印刷</button>
+
+  <!-- ━━━━━━━━━━━━━━━━━━ お見積書 ━━━━━━━━━━━━━━━━━━ -->
+  <div class="doc">
+    <div class="doc-title">ご 提 案 ・ お 見 積 書</div>
+    <div class="doc-date">発行日：<span class="ed" contenteditable="true" data-ph="2026年5月18日">2026年5月18日</span></div>
+
+    <div class="head-grid">
+      <div>
+        <div class="head-to">
+          <div class="head-to-name"><span class="ed" contenteditable="true" data-ph="株式会社○○">株式会社○○</span></div>
+        </div>
+        <div class="head-to-rep">代表取締役 <span class="ed" contenteditable="true" data-ph="○○ ○○">○○ ○○</span> 様</div>
+      </div>
+      <div class="head-from">
+        <div class="brand">Miyagi′s 業務</div>
+        <div class="name">代表 佐藤 優大 <span class="seal-box">印</span></div>
+        <div>共同代表 黒澤 颯翔</div>
+        <div>宮城県 / 高校生による中小企業AI業務効率化プロジェクト</div>
+        <div>連絡先：<span class="ed" contenteditable="true" data-ph="example@gmail.com">example@gmail.com</span></div>
+        <div>web：miyagis-gyomu.vercel.app</div>
+      </div>
+    </div>
+
+    <div class="subject">
+      <div class="subject-label">件名</div>
+      <div class="subject-text">業務効率化AIツール「Miyagi′s 業務」導入およびカスタマイズ業務</div>
+    </div>
+
+    <div class="total-row">
+      <div class="total-label">
+        ご請求金額（税込）
+        <small>初期費用 + 初月分月額利用料</small>
+      </div>
+      <div class="total-val" id="grandTotal">¥97,900<small>※税込</small></div>
+    </div>
+
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="width:50%;">品目・内容</th>
+          <th style="width:12%;">数量</th>
+          <th style="width:18%;">単価</th>
+          <th style="width:20%;">金額</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <strong>初期導入費（スタンダードプラン）</strong>
+            <div class="desc">業務に合わせたツールカスタマイズ、訪問導入1回、操作研修（2時間）、データ初期設定、本物AI機能の有効化を含みます。</div>
+          </td>
+          <td class="c">1式</td>
+          <td class="r">¥80,000</td>
+          <td class="r">¥80,000</td>
+        </tr>
+        <tr>
+          <td>
+            <strong>月額利用料（初月分）</strong>
+            <div class="desc">AI機能利用料、月次改善ヒアリング、データ自動バックアップ、LINE質問サポートを含みます。<br>2ヶ月目以降は毎月¥9,000をご請求いたします。</div>
+          </td>
+          <td class="c">1ヶ月</td>
+          <td class="r">¥9,000</td>
+          <td class="r">¥9,000</td>
+        </tr>
+        <tr class="sum">
+          <td colspan="3" class="r">小計</td>
+          <td class="r">¥89,000</td>
+        </tr>
+        <tr class="sum">
+          <td colspan="3" class="r">消費税（10%）</td>
+          <td class="r">¥8,900</td>
+        </tr>
+        <tr class="sum grand">
+          <td colspan="3" class="r">合計（税込）</td>
+          <td class="r">¥97,900</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="notes">
+      <strong>● 見積もり条件</strong>
+      <ul>
+        <li>本見積もりの有効期限は<strong>発行日より30日間</strong>です。</li>
+        <li>本ご提案には<strong>1ヶ月間の無料お試し期間</strong>が含まれます。お試し期間中のキャンセルは費用一切発生いたしません。</li>
+        <li>お支払いは納品月の翌月末払い（銀行振込）でお願いいたします。</li>
+        <li>追加機能のリクエストは別途お見積もりとさせていただきます。</li>
+      </ul>
+    </div>
+
+    <div class="foot">
+      <span>Miyagi′s 業務 / 宮城県</span>
+      <span>本書類は機密情報を含みます。お取り扱いにご注意ください。</span>
+    </div>
+  </div>
+
+  <!-- ━━━━━━━━━━━━━━━━━━ 業務委託契約書 ━━━━━━━━━━━━━━━━━━ -->
+  <div class="doc">
+    <div class="doc-title">業 務 委 託 契 約 書</div>
+
+    <p style="font-size:12px; margin:18px 0 18px; line-height:1.9;">
+      <strong><span class="ed" contenteditable="true" data-ph="株式会社○○">株式会社○○</span></strong>（以下「甲」という）と <strong>Miyagi′s 業務（代表 佐藤優大・黒澤颯翔）</strong>（以下「乙」という）は、業務効率化ツール「Miyagi′s 業務」の提供および関連業務の委託に関し、以下のとおり契約（以下「本契約」という）を締結する。
+    </p>
+
+    <div class="clauses">
+      <div class="article">
+        <div class="article-title">第1条（目的）</div>
+        本契約は、乙が甲に対し、業務効率化ツール「Miyagi′s 業務」（以下「本ツール」という）の提供、カスタマイズ、導入支援および継続的サポートを行うことを目的とする。
+      </div>
+
+      <div class="article">
+        <div class="article-title">第2条（委託業務の範囲）</div>
+        乙は甲に対し、以下の業務を提供する。
+        <ol>
+          <li>本ツールの利用権の付与およびカスタマイズ</li>
+          <li>導入時の操作研修（訪問1回／2時間）</li>
+          <li>月1回の改善ヒアリングおよびサポート</li>
+          <li>データ自動バックアップ機能の提供</li>
+        </ol>
+      </div>
+
+      <div class="article">
+        <div class="article-title">第3条（契約期間）</div>
+        本契約の期間は、契約締結日より<strong>1年間</strong>とする。期間満了日の<strong>30日前</strong>までに、いずれの当事者からも書面（電子メール含む）による解約申し出がない場合、本契約は同一条件で自動更新されるものとする。
+      </div>
+
+      <div class="article">
+        <div class="article-title">第4条（委託料）</div>
+        <ol>
+          <li>甲は乙に対し、初期導入費として<strong>金80,000円（税別）</strong>を契約締結時に支払う。</li>
+          <li>甲は乙に対し、月額利用料として<strong>毎月9,000円（税別）</strong>を毎月末日締め翌月末日払いにて支払う。</li>
+          <li>支払方法は銀行振込とし、振込手数料は甲の負担とする。</li>
+        </ol>
+      </div>
+
+      <div class="article">
+        <div class="article-title">第5条（無料お試し期間）</div>
+        本契約締結日から<strong>30日間</strong>を無料お試し期間とする。当該期間中に甲が解約を申し出た場合、第4条の費用は一切発生しないものとする。
+      </div>
+
+      <div class="article">
+        <div class="article-title">第6条（データの帰属）</div>
+        本ツールを通じて甲が入力・蓄積したすべての業務データは<strong>甲に帰属する</strong>。乙は甲の事前承諾なくこれを第三者に提供・開示しない。乙が本ツールの提供を停止する場合、乙は甲が当該データを保全できるよう協力する。
+      </div>
+
+      <div class="article">
+        <div class="article-title">第7条（秘密保持）</div>
+        甲および乙は、本契約遂行に関連して知り得た相手方の業務上の秘密を、本契約終了後も含め第三者に開示・漏洩してはならない。
+      </div>
+
+      <div class="article">
+        <div class="article-title">第8条（解除）</div>
+        <ol>
+          <li>甲および乙は、いつでも<strong>30日前の書面通知</strong>により本契約を解除することができる。</li>
+          <li>相手方が本契約に違反し、相当期間を定めた催告にもかかわらず是正されない場合、催告者は本契約を即時解除できる。</li>
+        </ol>
+      </div>
+
+      <div class="article">
+        <div class="article-title">第9条（損害賠償の上限）</div>
+        乙が甲に対して負う損害賠償の総額は、当該事由発生の直前12ヶ月間に甲が乙に支払った委託料総額を上限とする。ただし、乙の故意または重過失による場合はこの限りではない。
+      </div>
+
+      <div class="article">
+        <div class="article-title">第10条（協議）</div>
+        本契約に定めのない事項または解釈に疑義が生じた場合は、甲乙誠意をもって協議の上、解決するものとする。
+      </div>
+
+      <div class="article">
+        <div class="article-title">第11条（管轄）</div>
+        本契約に関する紛争は、<strong>仙台地方裁判所</strong>を第一審の専属的合意管轄裁判所とする。
+      </div>
+    </div>
+
+    <p style="font-size:11.5px; margin:18px 0 14px;">本契約締結の証として本書2通を作成し、甲乙署名捺印の上、各1通を保有する。</p>
+
+    <div class="doc-date" style="text-align:right;">契約締結日：<span class="ed" contenteditable="true" data-ph="2026年5月18日">2026年5月18日</span></div>
+
+    <div class="sign-grid">
+      <div class="sign-box">
+        <div class="sign-box-label">甲（委託者）</div>
+        <div class="sign-row">所在地：<span></span></div>
+        <div class="sign-row">商号：<span></span></div>
+        <div class="sign-row">代表者：<span></span></div>
+        <div class="sign-stamp">㊞</div>
+      </div>
+      <div class="sign-box">
+        <div class="sign-box-label">乙（受託者）</div>
+        <div class="sign-row">屋号：Miyagi′s 業務</div>
+        <div class="sign-row">代表：佐藤 優大</div>
+        <div class="sign-row">共同代表：黒澤 颯翔</div>
+        <div class="sign-stamp">㊞</div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <span>Miyagi′s 業務 業務委託契約書 v1.0</span>
+      <span>※本契約書は弁護士のレビューを受けた上でご利用ください</span>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('[contenteditable=true]').forEach(el => {
+      if (el.textContent === el.dataset.ph) el.textContent = '';
+      el.addEventListener('focus', () => { if (el.textContent === el.dataset.ph) el.textContent=''; });
+    });
+  </script>
+</body>
+</html>

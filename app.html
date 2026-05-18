@@ -271,6 +271,19 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
 .topbar-icon-btn.has-alert{position:relative;}
 .topbar-icon-btn.has-alert .badge-dot{display:block;}
 
+/* ── バックアップ催促バナー ── */
+.bk-banner{display:none;padding:10px 14px;margin:0;font-size:12px;line-height:1.5;font-weight:500;align-items:center;gap:10px;border-bottom:1px solid transparent;}
+.bk-banner.warn{display:flex;background:#fef3c7;color:#854d0e;border-color:#fde68a;}
+.bk-banner.urgent{display:flex;background:#fee2e2;color:#991b1b;border-color:#fecaca;}
+.bk-banner-icon{font-size:18px;line-height:1;flex-shrink:0;}
+.bk-banner-text{flex:1;}
+.bk-banner-text strong{display:block;font-weight:900;font-size:12.5px;}
+.bk-banner-text span{font-size:11px;opacity:.85;}
+.bk-banner-btn{background:var(--navy);color:#fff;border:none;padding:7px 14px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.bk-banner-btn:hover{background:var(--navy-mid);}
+.bk-banner-close{background:transparent;border:none;color:inherit;cursor:pointer;font-size:18px;line-height:1;opacity:.5;padding:4px 6px;flex-shrink:0;}
+.bk-banner-close:hover{opacity:1;}
+
 /* ── ダッシュボード ── */
 .dash-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
 .dash-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;}
@@ -363,6 +376,17 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       履歴
     </button>
   </nav>
+</div>
+
+<!-- バックアップ催促バナー -->
+<div class="bk-banner" id="backupBanner">
+  <span class="bk-banner-icon" id="bkIcon">⚠️</span>
+  <div class="bk-banner-text">
+    <strong id="bkTitle">バックアップを推奨します</strong>
+    <span id="bkBody">大切なデータを守るため、定期的にバックアップを取りましょう。</span>
+  </div>
+  <button class="bk-banner-btn" onclick="exportAllData(); checkBackupStatus();">今すぐ</button>
+  <button class="bk-banner-close" onclick="dismissBackupBanner()" title="今日は閉じる">×</button>
 </div>
 
 <!-- ═══════════════════════
@@ -2030,10 +2054,49 @@ convertToInvoice = function() {
 };
 
 /* ════════════════════
+   バックアップ催促バナー
+════════════════════ */
+function daysSince(iso) {
+  if (!iso) return Infinity;
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+}
+function dataIsEmpty() {
+  const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const invs = JSON.parse(localStorage.getItem('mgyb_invoices')||'[]');
+  const custs = JSON.parse(localStorage.getItem('mgyb_customers')||'[]');
+  return hist.length===0 && invs.length===0 && custs.length===0;
+}
+function dismissBackupBanner() {
+  sessionStorage.setItem('mgyb_bk_dismissed', new Date().toDateString());
+  document.getElementById('backupBanner').className = 'bk-banner';
+}
+function checkBackupStatus() {
+  const banner = document.getElementById('backupBanner');
+  if (!banner) return;
+  banner.className = 'bk-banner';
+  if (dataIsEmpty()) return;
+  if (sessionStorage.getItem('mgyb_bk_dismissed') === new Date().toDateString()) return;
+
+  const days = daysSince(localStorage.getItem('mgyb_last_backup'));
+  if (days < 7) return;
+
+  const isUrgent = days >= 14;
+  banner.className = 'bk-banner ' + (isUrgent ? 'urgent' : 'warn');
+  document.getElementById('bkIcon').textContent = isUrgent ? '🚨' : '⚠️';
+  document.getElementById('bkTitle').textContent = isUrgent
+    ? `${days===Infinity?'未':days+'日以上'}バックアップしていません`
+    : `前回のバックアップから${days}日経過しています`;
+  document.getElementById('bkBody').textContent = isUrgent
+    ? 'スマホが故障するとデータが全部消えます。今すぐバックアップを。'
+    : '週1回のバックアップを推奨。1クリックで完了します。';
+}
+
+/* ════════════════════
    初期化
 ════════════════════ */
 addItem();
 initVoiceInput();
+checkBackupStatus();
 /* 起動時に期日超過チェック */
 (function checkOverdueOnLoad(){
   const invs = loadInvoices();
