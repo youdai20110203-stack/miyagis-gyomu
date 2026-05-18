@@ -818,6 +818,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       <div class="field"><label>担当者名（任意）</label><input type="text" id="custEditPerson" placeholder="例：田中部長"></div>
       <div class="field"><label>住所・現場（任意）</label><input type="text" id="custEditAddress" placeholder="例：仙台市青葉区..."></div>
       <div class="field"><label>連絡先（電話・メール 任意）</label><input type="text" id="custEditContact" placeholder="例：022-XXX-XXXX"></div>
+      <div class="field"><label>適格請求書 登録番号（任意）</label><input type="text" id="custEditRegNo" placeholder="T1234567890123" maxlength="14" style="font-family:monospace;letter-spacing:.05em;"></div>
       <div class="field"><label>メモ（任意）</label><textarea id="custEditMemo" style="min-height:60px;" placeholder="例：支払いは月末締め翌月払い"></textarea></div>
     </div>
     <div class="modal-foot">
@@ -861,6 +862,27 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       <div class="settings-sec">
         <h4>📊 データの状況</h4>
         <div id="settingsStats"></div>
+      </div>
+
+      <div class="settings-sec">
+        <h4>🏢 発行者情報（請求書に印字）</h4>
+        <div class="settings-desc">請求書・見積書に印字される自社情報です。<strong style="color:var(--navy);">適格請求書（インボイス）発行には登録番号（T+13桁）が必須</strong>です。未登録の場合、相手方は仕入税額控除ができません。</div>
+        <div class="field"><label>屋号・会社名 <span style="color:#b91c1c">*</span></label><input type="text" id="issuerName" placeholder="例：佐藤建設 / 株式会社○○"></div>
+        <div class="field"><label>代表者名（任意）</label><input type="text" id="issuerRep" placeholder="例：代表 佐藤 太郎"></div>
+        <div class="field"><label>適格請求書発行事業者 登録番号</label>
+          <input type="text" id="issuerRegNo" placeholder="T1234567890123（T+13桁）" maxlength="14" style="font-family:monospace;letter-spacing:.05em;" oninput="validateRegNo()">
+          <div id="issuerRegNoWarn" style="font-size:10.5px;color:#b91c1c;margin-top:4px;display:none;">⚠ 形式が正しくありません。「T」＋数字13桁で入力してください。</div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:4px;">未登録の方は<a href="https://www.invoice-kohyo.nta.go.jp/" target="_blank" rel="noopener" style="color:var(--navy);">国税庁の適格請求書発行事業者公表サイト</a>で確認・申請できます。</div>
+        </div>
+        <div class="field"><label>住所</label><input type="text" id="issuerAddr" placeholder="例：仙台市青葉区○○ 1-2-3"></div>
+        <div class="field-row">
+          <div class="field"><label>電話</label><input type="text" id="issuerTel" placeholder="例：022-XXX-XXXX"></div>
+          <div class="field"><label>メール</label><input type="text" id="issuerEmail" placeholder="例：info@example.jp"></div>
+        </div>
+        <div class="field"><label>振込先口座（任意）</label><textarea id="issuerBank" style="min-height:55px;" placeholder="例：七十七銀行 仙台支店 普通 1234567 名義：サトウケンセツ"></textarea></div>
+        <div class="settings-btn-row">
+          <button class="settings-btn primary" onclick="saveIssuer()">発行者情報を保存</button>
+        </div>
       </div>
 
       <div class="settings-sec">
@@ -1599,11 +1621,12 @@ function openCustomerEdit(id) {
       document.getElementById('custEditPerson').value  = c.person || '';
       document.getElementById('custEditAddress').value = c.address || '';
       document.getElementById('custEditContact').value = c.contact || '';
+      document.getElementById('custEditRegNo').value   = c.regNo || '';
       document.getElementById('custEditMemo').value    = c.memo || '';
     }
   } else {
     document.getElementById('custEditTitle').textContent = '顧客を登録';
-    ['custEditName','custEditPerson','custEditAddress','custEditContact','custEditMemo'].forEach(i => document.getElementById(i).value='');
+    ['custEditName','custEditPerson','custEditAddress','custEditContact','custEditRegNo','custEditMemo'].forEach(i => document.getElementById(i).value='');
   }
   openModal('custEditModal');
 }
@@ -1619,6 +1642,7 @@ function saveCustomer() {
     person:  document.getElementById('custEditPerson').value.trim(),
     address: document.getElementById('custEditAddress').value.trim(),
     contact: document.getElementById('custEditContact').value.trim(),
+    regNo:   document.getElementById('custEditRegNo').value.trim().toUpperCase(),
     memo:    document.getElementById('custEditMemo').value.trim(),
     created: id ? (arr.find(c=>c.id===id)?.created || new Date().toISOString()) : new Date().toISOString(),
   };
@@ -1724,6 +1748,13 @@ generateEstimate = function() {
 
 function convertToInvoice() {
   if (!_lastEstimateData) { alert('まず見積もりを計算してください'); return; }
+  const iss = loadIssuer();
+  if (!iss.name || !iss.regNo) {
+    const msg = !iss.name
+      ? '⚠ 発行者情報（社名・住所など）が未設定です。\n適格請求書として有効にするには、設定から登録してください。\n\nこのまま続けますか？'
+      : '⚠ 適格請求書発行事業者の登録番号が未設定です。\n登録番号がない請求書は、受取側が消費税の仕入税額控除をできません。\n\nこのまま続けますか？';
+    if (!confirm(msg)) { openSettings(); return; }
+  }
   const inv = {
     id: 'inv'+Date.now(),
     no: generateInvoiceNo(),
@@ -1792,21 +1823,40 @@ function openInvoiceDetail(id) {
   if (!inv) return;
   const d = new Date(inv.issuedAt);
   const due = new Date(inv.dueAt);
-  const taxLabel = inv.taxRate === 0 ? '消費税（非課税）' : inv.taxRate === 0.08 ? '消費税（8%）' : '消費税（10%）';
+  const ratePct = inv.taxRate === 0 ? 0 : Math.round(inv.taxRate*100);
+  const taxLabel = ratePct === 0 ? '消費税（非課税）' : `消費税（${ratePct}%）`;
+  const iss = loadIssuer();
+  const cust = (inv.customerId ? loadCustomers().find(c=>c.id===inv.customerId) : null);
+  const custRegNo = cust?.regNo || '';
+  const issuerBlock = iss.name ? `
+    <div style="padding:12px 14px;background:#eef3ff;border-bottom:1px solid var(--border);font-size:11.5px;line-height:1.7;">
+      <div style="font-weight:900;color:var(--navy);font-size:12.5px;">${escapeHtml(iss.name)}${iss.rep?'　'+escapeHtml(iss.rep):''}</div>
+      ${iss.regNo ? `<div style="font-family:monospace;color:var(--navy);font-weight:700;letter-spacing:.04em;">登録番号：${escapeHtml(iss.regNo)}</div>` : `<div style="color:#b91c1c;font-weight:700;">⚠ 適格請求書登録番号 未設定</div>`}
+      ${iss.addr ? `<div style="color:var(--muted);">${escapeHtml(iss.addr)}</div>` : ''}
+      ${(iss.tel||iss.email) ? `<div style="color:var(--muted);">${[iss.tel,iss.email].filter(Boolean).map(escapeHtml).join(' / ')}</div>` : ''}
+    </div>` : `
+    <div style="padding:10px 14px;background:#fee2e2;color:#991b1b;font-size:11.5px;border-bottom:1px solid var(--border);">
+      ⚠ 発行者情報が未設定です。<a href="#" onclick="closeModal('invDetailModal');openSettings();return false;" style="color:#991b1b;text-decoration:underline;font-weight:700;">設定から登録</a>してください。
+    </div>`;
   document.getElementById('invDetailBody').innerHTML = `
+    ${issuerBlock}
     <div class="inv-meta">
       <div class="inv-meta-cell"><span class="inv-meta-label">請求書No.</span><span class="inv-meta-val">${inv.no}</span></div>
       <div class="inv-meta-cell"><span class="inv-meta-label">発行日</span><span class="inv-meta-val">${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}</span></div>
-      <div class="inv-meta-cell"><span class="inv-meta-label">顧客・案件名</span><span class="inv-meta-val">${escapeHtml(inv.client||'—')}</span></div>
+      <div class="inv-meta-cell"><span class="inv-meta-label">宛先</span><span class="inv-meta-val">${escapeHtml(inv.client||'—')}${custRegNo?' <span style="font-family:monospace;font-size:10px;color:var(--muted);">('+escapeHtml(custRegNo)+')</span>':''}</span></div>
       <div class="inv-meta-cell"><span class="inv-meta-label">支払期日</span><span class="inv-meta-val">${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}</span></div>
     </div>
     <div style="padding:14px 0 4px;">
       <div class="est-line-head"><span>項目</span><span style="text-align:right">数量</span><span style="text-align:right">金額（円）</span></div>
       ${inv.lines.map(l=>`<div class="est-line"><div class="est-line-name">${escapeHtml(l.name)}</div><div class="est-line-qty">${escapeHtml(String(l.qty))}</div><div class="est-line-amt">¥${l.amt.toLocaleString()}</div></div>`).join('')}
       <div class="est-total-row sub"><span class="est-total-label">小計</span><span class="est-total-val">¥${inv.subtotal.toLocaleString()}</span></div>
-      <div class="est-total-row"><span class="est-total-label">${taxLabel}</span><span class="est-total-val">¥${inv.tax.toLocaleString()}</span></div>
+      ${ratePct>0 ? `
+        <div class="est-total-row"><span class="est-total-label">${ratePct}%対象 計</span><span class="est-total-val">¥${inv.subtotal.toLocaleString()}</span></div>
+        <div class="est-total-row"><span class="est-total-label">消費税（${ratePct}%）</span><span class="est-total-val">¥${inv.tax.toLocaleString()}</span></div>
+      ` : `<div class="est-total-row"><span class="est-total-label">${taxLabel}</span><span class="est-total-val">¥${inv.tax.toLocaleString()}</span></div>`}
       <div class="est-total-row grand"><span class="est-total-label" style="font-weight:900;color:var(--navy);font-size:13px;">合計（税込）</span><span class="est-total-val">¥${inv.total.toLocaleString()}</span></div>
     </div>
+    ${iss.bank ? `<div class="est-note" style="white-space:pre-line;"><strong>振込先：</strong>\n${escapeHtml(iss.bank)}</div>` : ''}
     ${inv.note ? `<div class="est-note">【備考】${escapeHtml(inv.note)}</div>` : ''}
     <div class="inv-action-row" style="padding:14px 0 0;">
       <button class="inv-action-btn" onclick="printInvoice('${inv.id}')">🖨 PDF出力・印刷</button>
@@ -1835,22 +1885,44 @@ function copyInvoiceText(id) {
   const inv = loadInvoices().find(i=>i.id===id);
   if (!inv) return;
   const d = new Date(inv.issuedAt), due = new Date(inv.dueAt);
-  const taxLabel = inv.taxRate === 0 ? '非課税' : (inv.taxRate*100)+'%';
-  const txt = [
-    `【請求書】${inv.no}`,
+  const ratePct = inv.taxRate === 0 ? 0 : Math.round(inv.taxRate*100);
+  const iss = loadIssuer();
+  const cust = (inv.customerId ? loadCustomers().find(c=>c.id===inv.customerId) : null);
+  const custRegNo = cust?.regNo || '';
+  const parts = [
+    '【適格請求書】',
+    `請求書No.：${inv.no}`,
     `発行日：${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`,
     `支払期日：${due.getFullYear()}/${due.getMonth()+1}/${due.getDate()}`,
-    `宛先：${inv.client || '—'}`,
-    inv.site ? `現場：${inv.site}` : '', '',
-    '項目　／　数量　／　金額',
-    ...inv.lines.map(l=>`${l.name} ／ ${l.qty} ／ ¥${l.amt.toLocaleString()}`),
     '',
-    `小計：¥${inv.subtotal.toLocaleString()}`,
-    `消費税（${taxLabel}）：¥${inv.tax.toLocaleString()}`,
-    `合計（税込）：¥${inv.total.toLocaleString()}`,
-    inv.note ? '\n備考：'+inv.note : '',
-  ].filter(l=>l!==null).join('\n');
-  navigator.clipboard.writeText(txt).then(()=>showToast());
+    `宛先：${inv.client || '—'} 様`,
+    custRegNo ? `　登録番号：${custRegNo}` : '',
+    inv.site ? `現場：${inv.site}` : '',
+    '',
+  ];
+  if (iss.name) {
+    parts.push('────────────────────');
+    parts.push(`発行者：${iss.name}${iss.rep?'　'+iss.rep:''}`);
+    if (iss.regNo) parts.push(`登録番号：${iss.regNo}`);
+    if (iss.addr)  parts.push(`住所：${iss.addr}`);
+    if (iss.tel)   parts.push(`TEL：${iss.tel}`);
+    if (iss.email) parts.push(`メール：${iss.email}`);
+    parts.push('────────────────────','');
+  }
+  parts.push('■ 明細（項目／数量／税率／金額）');
+  inv.lines.forEach(l => parts.push(`${l.name}　／　${l.qty}　／　${ratePct?ratePct+'%':'—'}　／　¥${l.amt.toLocaleString()}`));
+  parts.push('');
+  parts.push(`小計（税抜）：¥${inv.subtotal.toLocaleString()}`);
+  if (ratePct>0) {
+    parts.push(`${ratePct}%対象 計：¥${inv.subtotal.toLocaleString()}`);
+    parts.push(`消費税（${ratePct}%）：¥${inv.tax.toLocaleString()}`);
+  } else {
+    parts.push(`消費税（非課税）：¥${inv.tax.toLocaleString()}`);
+  }
+  parts.push(`合計（税込）：¥${inv.total.toLocaleString()}`);
+  if (iss.bank) parts.push('', '【振込先】', iss.bank);
+  if (inv.note) parts.push('', '備考：'+inv.note);
+  navigator.clipboard.writeText(parts.filter(l=>l!==null && l!==undefined).join('\n')).then(()=>showToast());
 }
 
 function newInvoiceManual() {
@@ -1871,56 +1943,83 @@ function printInvoice(id) {
   const inv = loadInvoices().find(i=>i.id===id);
   if (!inv) return;
   const d = new Date(inv.issuedAt), due = new Date(inv.dueAt);
-  const taxLabel = inv.taxRate === 0 ? '消費税（非課税）' : inv.taxRate === 0.08 ? '消費税（8%）' : '消費税（10%）';
-  /* 印刷専用エリアに描画して印刷 */
+  const ratePct = inv.taxRate === 0 ? 0 : Math.round(inv.taxRate*100);
+  const taxLabel = ratePct === 0 ? '消費税（非課税）' : `消費税（${ratePct}%）`;
+  const iss = loadIssuer();
+  const cust = (inv.customerId ? loadCustomers().find(c=>c.id===inv.customerId) : null);
+  const custRegNo = cust?.regNo || '';
+  if (!iss.name) {
+    if (!confirm('発行者情報が未設定です。\nこのまま印刷すると、適格請求書としての要件を満たしません。\n\nそれでも印刷を続けますか？')) {
+      closeModal('invDetailModal'); openSettings(); return;
+    }
+  } else if (!iss.regNo) {
+    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\nこのまま印刷した場合、受取側は消費税の仕入税額控除ができません。\n\nそれでも印刷を続けますか？')) {
+      closeModal('invDetailModal'); openSettings(); return;
+    }
+  }
   const printArea = document.getElementById('printArea');
   printArea.innerHTML = `
     <style>
       @media print { body * { visibility:hidden; } #printArea, #printArea * { visibility:visible; } #printArea { position:absolute; left:0; top:0; width:100%; padding:14mm; display:block !important; } @page { margin:0; } }
     </style>
     <div style="font-family:'Noto Sans JP',sans-serif;color:#111;">
-      <h1 style="text-align:center;font-size:24pt;letter-spacing:.3em;margin-bottom:20pt;border-bottom:3px double #1c2f5e;padding-bottom:10pt;">請　求　書</h1>
-      <div style="display:flex;justify-content:space-between;margin-bottom:18pt;">
-        <div style="font-size:11pt;line-height:1.7;">
+      <h1 style="text-align:center;font-size:22pt;letter-spacing:.3em;margin-bottom:6pt;border-bottom:3px double #1c2f5e;padding-bottom:8pt;">適格請求書</h1>
+      <div style="text-align:center;font-size:9pt;color:#666;margin-bottom:18pt;letter-spacing:.1em;">INVOICE</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:16pt;align-items:flex-start;">
+        <div style="font-size:11pt;line-height:1.7;flex:1;">
           <strong style="font-size:14pt;">${escapeHtml(inv.client||'—')} 様</strong><br>
-          ${inv.site ? '<span style="font-size:10pt;color:#666;">'+escapeHtml(inv.site)+'</span>' : ''}
+          ${inv.site ? '<span style="font-size:10pt;color:#666;">'+escapeHtml(inv.site)+'</span><br>' : ''}
+          ${custRegNo ? '<span style="font-family:monospace;font-size:9.5pt;color:#666;">登録番号：'+escapeHtml(custRegNo)+'</span>' : ''}
         </div>
-        <div style="font-size:10pt;line-height:1.8;text-align:right;">
-          請求書No. <strong>${inv.no}</strong><br>
+        <div style="font-size:10pt;line-height:1.8;text-align:right;flex-shrink:0;">
+          請求書No. <strong>${escapeHtml(inv.no)}</strong><br>
           発行日 ${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日<br>
-          支払期日 ${due.getFullYear()}年${due.getMonth()+1}月${due.getDate()}日
+          支払期日 <strong>${due.getFullYear()}年${due.getMonth()+1}月${due.getDate()}日</strong>
         </div>
       </div>
-      <p style="font-size:11pt;margin-bottom:14pt;">下記の通りご請求申し上げます。</p>
+      ${iss.name ? `
+      <div style="border:1.5px solid #1c2f5e;padding:9pt 12pt;margin-bottom:14pt;font-size:10pt;line-height:1.7;background:#f7f8fb;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+        <div style="font-size:12pt;font-weight:900;color:#1c2f5e;margin-bottom:2pt;">${escapeHtml(iss.name)}${iss.rep?'　'+escapeHtml(iss.rep):''}</div>
+        ${iss.regNo ? `<div style="font-family:monospace;font-weight:700;color:#1c2f5e;letter-spacing:.05em;">登録番号　${escapeHtml(iss.regNo)}</div>` : ''}
+        ${iss.addr ? `<div>${escapeHtml(iss.addr)}</div>` : ''}
+        ${(iss.tel||iss.email) ? `<div style="color:#444;">${[iss.tel?'TEL '+iss.tel:'',iss.email].filter(Boolean).map(escapeHtml).join('　／　')}</div>` : ''}
+      </div>` : ''}
+      <p style="font-size:11pt;margin-bottom:10pt;">下記の通りご請求申し上げます。</p>
       <div style="background:#1c2f5e;color:#fff;padding:10pt 14pt;font-size:14pt;font-weight:900;letter-spacing:.05em;margin-bottom:14pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
         ご請求金額　¥${inv.total.toLocaleString()}（税込）
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:10.5pt;margin-bottom:18pt;">
+      <table style="width:100%;border-collapse:collapse;font-size:10.5pt;margin-bottom:14pt;">
         <thead>
           <tr style="background:#eef3ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
             <th style="padding:7pt 8pt;text-align:left;border:1px solid #c8d4f0;">項目</th>
-            <th style="padding:7pt 8pt;text-align:right;border:1px solid #c8d4f0;width:80pt;">数量</th>
-            <th style="padding:7pt 8pt;text-align:right;border:1px solid #c8d4f0;width:100pt;">金額（円）</th>
+            <th style="padding:7pt 8pt;text-align:right;border:1px solid #c8d4f0;width:70pt;">数量</th>
+            <th style="padding:7pt 8pt;text-align:right;border:1px solid #c8d4f0;width:50pt;">税率</th>
+            <th style="padding:7pt 8pt;text-align:right;border:1px solid #c8d4f0;width:90pt;">金額（円）</th>
           </tr>
         </thead>
         <tbody>
           ${inv.lines.map(l=>`<tr>
             <td style="padding:7pt 8pt;border:1px solid #c8d4f0;">${escapeHtml(l.name)}</td>
             <td style="padding:7pt 8pt;border:1px solid #c8d4f0;text-align:right;">${escapeHtml(String(l.qty))}</td>
+            <td style="padding:7pt 8pt;border:1px solid #c8d4f0;text-align:right;">${ratePct?ratePct+'%':'—'}</td>
             <td style="padding:7pt 8pt;border:1px solid #c8d4f0;text-align:right;">¥${l.amt.toLocaleString()}</td>
           </tr>`).join('')}
         </tbody>
         <tfoot>
-          <tr><td colspan="2" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">小計</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.subtotal.toLocaleString()}</td></tr>
-          <tr><td colspan="2" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">${taxLabel}</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.tax.toLocaleString()}</td></tr>
+          <tr><td colspan="3" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">小計（税抜）</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.subtotal.toLocaleString()}</td></tr>
+          ${ratePct>0 ? `
+          <tr><td colspan="3" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">${ratePct}%対象 計</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.subtotal.toLocaleString()}</td></tr>
+          <tr><td colspan="3" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">消費税（${ratePct}%）</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.tax.toLocaleString()}</td></tr>
+          ` : `<tr><td colspan="3" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">${taxLabel}</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">¥${inv.tax.toLocaleString()}</td></tr>`}
           <tr style="background:#eef3ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-            <td colspan="2" style="padding:9pt 8pt;text-align:right;border:1px solid #1c2f5e;font-weight:900;font-size:12pt;">合計（税込）</td>
+            <td colspan="3" style="padding:9pt 8pt;text-align:right;border:1px solid #1c2f5e;font-weight:900;font-size:12pt;">合計（税込）</td>
             <td style="padding:9pt 8pt;text-align:right;border:1px solid #1c2f5e;font-weight:900;font-size:14pt;color:#1c2f5e;">¥${inv.total.toLocaleString()}</td>
           </tr>
         </tfoot>
       </table>
+      ${iss.bank ? `<div style="border:1px solid #1c2f5e;padding:8pt 12pt;background:#f7f8fb;font-size:10pt;margin-bottom:10pt;white-space:pre-line;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><strong style="color:#1c2f5e;">お振込先：</strong>\n${escapeHtml(iss.bank)}</div>` : ''}
       ${inv.note ? `<div style="border-left:3px solid #1c2f5e;padding:8pt 12pt;background:#f7f8fb;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><strong>備考：</strong>${escapeHtml(inv.note)}</div>` : ''}
-      <div style="margin-top:30pt;font-size:9.5pt;color:#666;border-top:1px solid #ddd;padding-top:10pt;">
+      <div style="margin-top:22pt;font-size:9pt;color:#666;border-top:1px solid #ddd;padding-top:8pt;line-height:1.6;">
         ※ お振込手数料は貴社にてご負担くださいますようお願い申し上げます。<br>
         ※ ご不明な点がございましたらお気軽にお問い合わせください。
       </div>
@@ -2249,7 +2348,52 @@ function openSettings() {
   const lastBackup = localStorage.getItem('mgyb_last_backup');
   document.getElementById('lastBackupInfo').textContent =
     lastBackup ? `最終バックアップ：${new Date(lastBackup).toLocaleString()}` : '※ まだ一度もバックアップしていません';
+  /* 発行者情報読み込み */
+  const iss = loadIssuer();
+  document.getElementById('issuerName').value  = iss.name  || '';
+  document.getElementById('issuerRep').value   = iss.rep   || '';
+  document.getElementById('issuerRegNo').value = iss.regNo || '';
+  document.getElementById('issuerAddr').value  = iss.addr  || '';
+  document.getElementById('issuerTel').value   = iss.tel   || '';
+  document.getElementById('issuerEmail').value = iss.email || '';
+  document.getElementById('issuerBank').value  = iss.bank  || '';
+  validateRegNo();
   openModal('settingsModal');
+}
+
+/* ════════════════════
+   発行者情報（インボイス対応）
+════════════════════ */
+const REG_NO_PATTERN = /^T\d{13}$/;
+function loadIssuer() {
+  try { return JSON.parse(localStorage.getItem('mgyb_issuer')||'{}') || {}; }
+  catch(e) { return {}; }
+}
+function saveIssuer() {
+  const regNo = document.getElementById('issuerRegNo').value.trim().toUpperCase();
+  if (regNo && !REG_NO_PATTERN.test(regNo)) {
+    alert('登録番号の形式が正しくありません。「T」＋数字13桁で入力してください。\n例：T1234567890123');
+    return;
+  }
+  const data = {
+    name:  document.getElementById('issuerName').value.trim(),
+    rep:   document.getElementById('issuerRep').value.trim(),
+    regNo,
+    addr:  document.getElementById('issuerAddr').value.trim(),
+    tel:   document.getElementById('issuerTel').value.trim(),
+    email: document.getElementById('issuerEmail').value.trim(),
+    bank:  document.getElementById('issuerBank').value.trim(),
+  };
+  if (!data.name) { alert('屋号・会社名は必須です'); return; }
+  localStorage.setItem('mgyb_issuer', JSON.stringify(data));
+  haptic(12);
+  showToast('発行者情報を保存しました');
+}
+function validateRegNo() {
+  const v = document.getElementById('issuerRegNo').value.trim().toUpperCase();
+  const w = document.getElementById('issuerRegNoWarn');
+  if (!v) { w.style.display = 'none'; return; }
+  w.style.display = REG_NO_PATTERN.test(v) ? 'none' : 'block';
 }
 
 function renderSettingsStats() {
@@ -2273,9 +2417,10 @@ function renderSettingsStats() {
 
 function exportAllData() {
   const data = {
-    schema: 1,
+    schema: 2,
     exportedAt: new Date().toISOString(),
     app: 'miyagis-gyomu',
+    issuer: loadIssuer(),
     customers: loadCustomers(),
     history: JSON.parse(localStorage.getItem('mgyb_hist')||'[]'),
     invoices: loadInvoices(),
@@ -2315,6 +2460,7 @@ function handleRestoreFile(ev) {
         saveCustomers(data.customers);
         localStorage.setItem('mgyb_hist', JSON.stringify(data.history));
         saveInvoices(data.invoices);
+        if (data.issuer) localStorage.setItem('mgyb_issuer', JSON.stringify(data.issuer));
       } else {
         /* マージ：IDで重複排除（新しい方を採用） */
         const merge = (existing, incoming, key='id') => {
@@ -2330,6 +2476,7 @@ function handleRestoreFile(ev) {
         [...existingHist, ...data.history].forEach(h => histMap.set(h.date + '|' + (h.text||'').slice(0,30), h));
         localStorage.setItem('mgyb_hist', JSON.stringify(Array.from(histMap.values()).sort((a,b)=>b.date.localeCompare(a.date))));
         saveInvoices(merge(loadInvoices(), data.invoices));
+        if (data.issuer && !loadIssuer().name) localStorage.setItem('mgyb_issuer', JSON.stringify(data.issuer));
       }
       showToast('復元しました');
       renderSettingsStats();
@@ -2391,6 +2538,13 @@ saveEstimate = function() {
 const _origConvertToInvoice = convertToInvoice;
 convertToInvoice = function() {
   if (!_lastEstimateData) { alert('まず見積もりを計算してください'); return; }
+  const iss = loadIssuer();
+  if (!iss.name || !iss.regNo) {
+    const msg = !iss.name
+      ? '⚠ 発行者情報（社名・住所など）が未設定です。\n適格請求書として有効にするには、設定から登録してください。\n\nこのまま続けますか？'
+      : '⚠ 適格請求書発行事業者の登録番号が未設定です。\n登録番号がない請求書は、受取側が消費税の仕入税額控除をできません。\n\nこのまま続けますか？';
+    if (!confirm(msg)) { openSettings(); return; }
+  }
   const cust = loadCustomers().find(c => _lastEstimateData.client.includes(c.name));
   const inv = {
     id: 'inv'+Date.now(),
