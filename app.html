@@ -1543,16 +1543,18 @@ function renderHistory() {
 }
 
 function openHistDetail(idx) {
-  _currentHistIdx = idx;
   const hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
   const h = hist[idx];
+  if (!h) return;
+  _currentHistIdx = idx;
+  document.getElementById('histListWrap').style.display = 'none';
   document.getElementById('histDetail').style.display = '';
-  document.getElementById('histList').style.display = 'none';
-  document.getElementById('histDetailContent').innerHTML = `<pre style="white-space:pre-wrap;font-size:12.5px;line-height:1.75;font-family:inherit;color:var(--ink);">${h.text}</pre>`;
+  document.getElementById('histDetailContent').innerHTML = `<pre style="white-space:pre-wrap;font-size:12.5px;line-height:1.75;font-family:inherit;color:var(--ink);">${escapeHtml(h.text)}</pre>`;
 }
 
 function closeHistDetail() {
   document.getElementById('histDetail').style.display = 'none';
+  document.getElementById('histListWrap').style.display = '';
   document.getElementById('histList').style.display = '';
 }
 
@@ -2119,18 +2121,21 @@ renderHistory = function() {
   document.getElementById('histSearchClear').classList.toggle('on', !!q);
   document.getElementById('histDetail').style.display = 'none';
   document.getElementById('histListWrap').style.display = '';
+  document.getElementById('histList').style.display = '';
   const list = document.getElementById('histList');
-  let hist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
-  if (q) hist = hist.filter(h => ((h.site||'')+(h.client||'')+(h.text||'')).toLowerCase().includes(q));
-  if (hist.length === 0) {
+  /* インデックスを保持したままフィルタ — indexOf は別 JSON.parse だと必ず -1 になるので使わない */
+  const allHist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
+  const indexed = allHist.map((h, i) => ({ h, i }));
+  const displayed = q
+    ? indexed.filter(({ h }) => ((h.site||'')+(h.client||'')+(h.text||'')).toLowerCase().includes(q))
+    : indexed;
+  if (displayed.length === 0) {
     list.innerHTML = q
       ? `<div class="hist-empty">「${escapeHtml(q)}」に一致する記録はありません</div>`
       : '<div class="hist-empty">保存済みのデータがありません。<br>日報や見積もりを作成して「保存する」を押してください。</div>';
     return;
   }
-  const allHist = JSON.parse(localStorage.getItem('mgyb_hist')||'[]');
-  list.innerHTML = hist.map(h => {
-    const i = allHist.indexOf(h);
+  list.innerHTML = displayed.map(({ h, i }) => {
     const d = new Date(h.date);
     const dateStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
     const preview = (h.text||'').split('\n').filter(l=>l.trim()&&!l.startsWith('【')).slice(0,2).join(' ');
@@ -2522,6 +2527,7 @@ saveReport = function() {
   hist.unshift({ type:'report', date: new Date().toISOString(), site, raw: _lastRawReport, text: _lastReportText, customerId: cust?.id });
   localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,200)));
   showToast('保存しました');
+  haptic(15); confetti({count:50,duration:2400});
 };
 
 const _origSaveEstimate = saveEstimate;
@@ -2533,6 +2539,7 @@ saveEstimate = function() {
   hist.unshift({ type:'estimate', date: new Date().toISOString(), client, text: _lastEstText, customerId: cust?.id });
   localStorage.setItem('mgyb_hist', JSON.stringify(hist.slice(0,200)));
   showToast('保存しました');
+  haptic(15); confetti({count:50,duration:2400});
 };
 
 const _origConvertToInvoice = convertToInvoice;
