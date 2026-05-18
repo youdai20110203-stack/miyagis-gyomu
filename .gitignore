@@ -13,3 +13,8 @@ npm-debug.log*
 
 # Dependency
 node_modules/
+
+# Installers / binaries
+*.exe
+*.msi
+*.dmg
