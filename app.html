@@ -480,7 +480,6 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
   .topbar::before{display:none;}
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -837,6 +836,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       <button class="modal-close" onclick="closeModal('invDetailModal')">×</button>
     </div>
     <div class="modal-body" id="invDetailBody"></div>
+    <div class="modal-foot" id="invDetailFoot" style="flex-wrap:wrap;gap:6px;"></div>
   </div>
 </div>
 
@@ -2117,13 +2117,15 @@ function openInvoiceDetail(id) {
     </div>
     ${iss.bank ? `<div class="est-note" style="white-space:pre-line;"><strong>振込先：</strong>\n${escapeHtml(iss.bank)}</div>` : ''}
     ${inv.note ? `<div class="est-note">【備考】${escapeHtml(inv.note)}</div>` : ''}
-    <div class="inv-action-row" style="padding:14px 0 0;">
-      <button class="inv-action-btn" onclick="downloadInvoicePDF('${inv.id}')">📥 PDF保存</button>
-      <button class="inv-action-btn" onclick="printInvoice('${inv.id}')">🖨 印刷</button>
-      <button class="inv-action-btn" onclick="shareInvoiceLink('${inv.id}')">🔗 共有リンク</button>
-      <button class="inv-action-btn" onclick="copyInvoiceText('${inv.id}')">📋 コピー</button>
-      <button class="inv-action-btn" onclick="openInvEdit('${inv.id}')">✏ 編集</button>
-    </div>`;
+  `;
+  /* ボタンは固定フッターに配置 — モーダルがスクロールしてもいつでも押せる */
+  document.getElementById('invDetailFoot').innerHTML = `
+    <button class="inv-action-btn" style="flex:1;min-width:46%;" onclick="downloadInvoicePDF('${inv.id}')">📥 PDFで保存</button>
+    <button class="inv-action-btn" style="flex:1;min-width:46%;" onclick="shareInvoiceLink('${inv.id}')">🔗 共有リンク</button>
+    <button class="inv-action-btn" style="flex:1;min-width:30%;" onclick="copyInvoiceText('${inv.id}')">📋 コピー</button>
+    <button class="inv-action-btn" style="flex:1;min-width:30%;" onclick="openInvEdit('${inv.id}')">✏ 編集</button>
+    <button class="inv-action-btn" style="flex:1;min-width:30%;" onclick="printInvoice('${inv.id}')">🖨 印刷</button>
+  `;
   openModal('invDetailModal');
 }
 
@@ -2215,56 +2217,75 @@ function printDoc(panelId) {
   setTimeout(()=>window.print(), 100);
 }
 
-/* スマホでも確実にPDFが保存できる：html2pdfで直接PDF生成 */
+/* 新しいウィンドウに請求書を表示し、印刷ダイアログで「PDFに保存」を選んでもらう。
+   PC/スマホ/iOS/Android すべてで動く、ブラウザ標準の最も確実なPDF生成方法。 */
 function downloadInvoicePDF(id) {
   const inv = loadInvoices().find(i=>i.id===id);
   if (!inv) return;
-  if (typeof html2pdf === 'undefined') {
-    alert('PDFライブラリの読み込み中です。数秒後にもう一度お試しください。');
-    return;
-  }
   const iss = loadIssuer();
   if (!iss.name) {
-    if (!confirm('発行者情報が未設定です。\nこのまま続けると、適格請求書としての要件を満たしません。\n\nそれでもPDF保存を続けますか？')) {
+    if (!confirm('発行者情報が未設定です。\nこのまま続けると、適格請求書としての要件を満たしません。\n\nそれでも保存しますか？')) {
       closeModal('invDetailModal'); openSettings(); return;
     }
   } else if (!iss.regNo) {
-    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\n\nそれでもPDF保存を続けますか？')) {
+    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\n\nそれでも保存しますか？')) {
       closeModal('invDetailModal'); openSettings(); return;
     }
   }
-  const printArea = document.getElementById('printArea');
-  buildInvoicePrintHTML(inv, iss, printArea);
-  printArea.style.display = 'block';
-  printArea.style.position = 'absolute';
-  printArea.style.left = '-9999px';
-  printArea.style.top = '0';
-  printArea.style.width = '210mm';
-  printArea.style.background = '#fff';
+  const tmp = document.createElement('div');
+  buildInvoicePrintHTML(inv, iss, tmp);
+  const invHTML = tmp.innerHTML;
 
-  showToast('PDFを生成中…');
-  haptic(10);
-  const fname = `invoice-${inv.no || inv.id}.pdf`;
-  /* printArea内のdivタグ（実際の請求書）を取得 */
-  const invDiv = printArea.querySelector('div[style*="font-family"]') || printArea.querySelector('div');
-  if (!invDiv) { alert('請求書レイアウトが見つかりません'); return; }
-  html2pdf().set({
-    margin: 10,
-    filename: fname,
-    image: { type:'jpeg', quality:0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor:'#fff', logging: false },
-    jsPDF: { unit:'mm', format:'a4', orientation:'portrait', compress: true }
-  }).from(invDiv).save().then(()=>{
-    printArea.style.display = 'none';
-    printArea.style.position = '';
-    printArea.style.left = '';
-    printArea.style.width = '';
-    haptic(15); showToast('PDFをダウンロードしました');
-  }).catch(err => {
-    console.error('PDF生成エラー:', err);
-    printArea.style.display = 'none';
-    alert('PDF保存に失敗しました。ブラウザを再読み込みしてお試しください。\n（ブラウザのポップアップ許可も確認してください）');
+  const win = window.open('', '_blank', 'width=820,height=1100');
+  if (!win) {
+    alert('ポップアップがブロックされました。\nブラウザのアドレスバー右側のブロックアイコンをタップして許可してください。');
+    return;
+  }
+  const title = `請求書_${inv.no || inv.id}_${(inv.client||'').replace(/[\\\/:*?"<>|]/g,'')}`;
+  win.document.write(`<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;background:#e8edf5;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .pdf-banner{position:sticky;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#7c2d12;padding:14px 18px;text-align:center;font-weight:900;font-size:13.5px;border-bottom:2px solid #fbbf24;line-height:1.6;}
+  .pdf-banner kbd{display:inline-block;padding:2px 8px;background:#fff;border:1.5px solid #92400e;border-radius:4px;font-family:inherit;font-size:12px;color:#92400e;margin:0 3px;}
+  .pdf-banner .pdf-print-btn{display:inline-block;margin-top:8px;background:#1c2f5e;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:900;font-size:13px;cursor:pointer;font-family:inherit;}
+  .pdf-print-btn:hover{background:#2a3f7a;}
+  .pdf-page{max-width:210mm;margin:24px auto;background:#fff;padding:14mm;box-shadow:0 6px 24px rgba(28,47,94,.18);}
+  @media print {
+    .pdf-banner{display:none !important;}
+    html,body{background:#fff;}
+    .pdf-page{margin:0 !important;max-width:none !important;padding:14mm !important;box-shadow:none !important;}
+    @page{size:A4 portrait;margin:0;}
+  }
+</style>
+</head>
+<body>
+<div class="pdf-banner">
+  📥 PDFで保存するには：印刷ダイアログの<kbd>送信先</kbd>を <kbd>PDFに保存</kbd> または <kbd>Save as PDF</kbd> に変更してください<br>
+  <button class="pdf-print-btn" onclick="window.print()">📥 印刷／PDF保存をやり直す</button>
+</div>
+<div class="pdf-page">${invHTML}</div>
+<script>
+  window.addEventListener('load', () => {
+    /* フォント読み込みを待ってから印刷ダイアログを自動で開く */
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => setTimeout(() => window.print(), 400));
+    } else {
+      setTimeout(() => window.print(), 800);
+    }
   });
+<\/script>
+</body></html>`);
+  win.document.close();
+  haptic(12);
+  showToast('別画面が開きます。送信先を「PDFに保存」に変更してください');
 }
 
 /* 請求書を共有URLで送る：暗号化なしのbase64エンコード */
