@@ -480,6 +480,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
   .topbar::before{display:none;}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
 </head>
 <body>
 
@@ -940,6 +941,12 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       </div>
 
       <div class="settings-sec">
+        <h4>⏪ 復元ポイント（自動スナップショット）</h4>
+        <div class="settings-desc">データ保存ごとに直近5世代分の状態を自動保管しています。誤って削除した時などにここから復元できます。</div>
+        <div id="snapshotList" style="display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+
+      <div class="settings-sec">
         <h4>📊 会計ソフト連携（CSV出力）</h4>
         <div class="settings-desc">請求書データを会計ソフトに取り込める形式で書き出します。<br><strong style="color:var(--navy);">freee / 弥生会計 / マネーフォワード</strong> で読み込めます。</div>
         <div class="settings-btn-row">
@@ -958,6 +965,22 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
           <button class="settings-btn" onclick="document.getElementById('restoreFile').click();_restoreMode='merge';">➕ 追加マージ復元</button>
           <button class="settings-btn danger" onclick="document.getElementById('restoreFile').click();_restoreMode='replace';">⚠ 上書き復元</button>
         </div>
+      </div>
+
+      <div class="settings-sec" style="background:linear-gradient(135deg,#fef3c7,#fff7ed);border:1px solid #fde68a;border-radius:12px;padding:14px 16px;">
+        <h4 style="color:#92400e;">🚀 本契約後の機能ロードマップ</h4>
+        <div class="settings-desc" style="color:#7c2d12;">体験版では下記の機能はまだ未対応です。<strong>本契約後、御社の業務に合わせて構築します。</strong></div>
+        <ul style="margin:8px 0 0 0;padding-left:20px;font-size:11.5px;color:#7c2d12;line-height:1.9;">
+          <li>☁ <strong>クラウド同期</strong> — 社長スマホ・事務員PC・現場タブレットでリアルタイム共有</li>
+          <li>👥 <strong>複数ユーザー対応</strong> — 社員ごとのアカウント・権限設定</li>
+          <li>📅 <strong>自動バックアップ</strong> — 毎日深夜にクラウドへ自動保存</li>
+          <li>📧 <strong>取引先へメール送信</strong> — 請求書PDFを直接送付＋送付履歴の管理</li>
+          <li>🔔 <strong>入金催促の自動通知</strong> — 期日超過を翌日にLINE通知</li>
+          <li>📈 <strong>月次・年次レポート</strong> — 売上推移グラフ、税額試算</li>
+          <li>🤖 <strong>本物のAI連携</strong> — Claude/ChatGPT APIで日報・見積もり精度を大幅向上</li>
+          <li>✅ <strong>税理士監修</strong> — 法的に正確な帳票フォーマット保証</li>
+        </ul>
+        <div style="margin-top:10px;font-size:10.5px;color:#92400e;font-weight:700;">※ 体験版は1台のスマホ・ブラウザでのみ動作します。機種変更時は事前に「バックアップ書き出し」を必ず行ってください。</div>
       </div>
 
       <div class="settings-sec">
@@ -1457,11 +1480,29 @@ const WORK_TYPES = [
   { key:'fire',      label:'消防設備工事',              unit:'式',  materialUnit:180000,laborUnit:100000,cat:'設備' },
   { key:'solar',     label:'太陽光パネル設置',          unit:'kW',  materialUnit:180000,laborUnit:40000, cat:'設備' },
 
+  /* エクステリア・造園 */
+  { key:'garden',    label:'造園・植栽工事',            unit:'m²',  materialUnit:3500,  laborUnit:4500,  cat:'エクステリア・造園' },
+  { key:'exterior_lt',label:'外構・エクステリア工事',   unit:'m²',  materialUnit:6000,  laborUnit:5500,  cat:'エクステリア・造園' },
+  { key:'fence_wall',label:'フェンス・ブロック塀工事',  unit:'m',   materialUnit:9000,  laborUnit:5000,  cat:'エクステリア・造園' },
+
+  /* リフォーム・改修 */
+  { key:'reform_kit',label:'キッチンリフォーム',        unit:'式',  materialUnit:600000,laborUnit:200000,cat:'リフォーム・改修' },
+  { key:'reform_bath',label:'浴室リフォーム（ユニットバス）',unit:'式',materialUnit:550000,laborUnit:180000,cat:'リフォーム・改修' },
+  { key:'reform_toilet',label:'トイレリフォーム',       unit:'式',  materialUnit:120000,laborUnit:60000, cat:'リフォーム・改修' },
+  { key:'water_heater',label:'給湯器交換',              unit:'台',  materialUnit:180000,laborUnit:35000, cat:'リフォーム・改修' },
+  { key:'soundproof',label:'防音工事',                  unit:'m²',  materialUnit:8000,  laborUnit:6000,  cat:'リフォーム・改修' },
+
+  /* 環境・安全 */
+  { key:'asbestos',  label:'アスベスト除去工事',        unit:'m²',  materialUnit:5000,  laborUnit:15000, cat:'環境・安全' },
+  { key:'pest',      label:'害虫・防蟻処理',            unit:'m²',  materialUnit:800,   laborUnit:1500,  cat:'環境・安全' },
+  { key:'recycle',   label:'廃材リサイクル処理',        unit:'t',   materialUnit:0,     laborUnit:25000, cat:'環境・安全' },
+
   /* その他 */
   { key:'transport', label:'資材運搬・搬入',            unit:'回',  materialUnit:0,     laborUnit:25000, cat:'その他' },
   { key:'cleanup',   label:'建設廃棄物処理・清掃',      unit:'m²',  materialUnit:500,   laborUnit:800,   cat:'その他' },
   { key:'survey',    label:'測量・調査',                unit:'日',  materialUnit:0,     laborUnit:60000, cat:'その他' },
   { key:'design',    label:'設計・図面作成',            unit:'式',  materialUnit:0,     laborUnit:150000,cat:'その他' },
+  { key:'inspect',   label:'検査・立会い',              unit:'日',  materialUnit:0,     laborUnit:40000, cat:'その他' },
   { key:'daily_rep', label:'日報・書類作成（月額換算）',unit:'件/月',materialUnit:0,     laborUnit:12000, cat:'その他' },
   { key:'estimate',  label:'見積もり作成代行（件）',    unit:'件',  materialUnit:0,     laborUnit:8000,  cat:'その他' },
   { key:'custom',    label:'その他（金額直接入力）',    unit:'式',  materialUnit:0,     laborUnit:0,     cat:'その他' },
@@ -1678,7 +1719,7 @@ function showToast(msg='コピーしました') {
    顧客マスタ
 ════════════════════ */
 function loadCustomers() { return JSON.parse(localStorage.getItem('mgyb_customers')||'[]'); }
-function saveCustomers(arr) { localStorage.setItem('mgyb_customers', JSON.stringify(arr)); }
+function saveCustomers(arr) { localStorage.setItem('mgyb_customers', JSON.stringify(arr)); try { saveAutoSnapshot(); } catch(e){} }
 
 function renderCustomers() {
   const list = document.getElementById('customerList');
@@ -1797,7 +1838,43 @@ function pickCustomer(id) {
    請求書
 ════════════════════ */
 function loadInvoices() { return JSON.parse(localStorage.getItem('mgyb_invoices')||'[]'); }
-function saveInvoices(arr) { localStorage.setItem('mgyb_invoices', JSON.stringify(arr)); }
+function saveInvoices(arr) { localStorage.setItem('mgyb_invoices', JSON.stringify(arr)); saveAutoSnapshot(); }
+
+/* 自動スナップショット：保存ごとに過去5世代分を保管 */
+function saveAutoSnapshot() {
+  try {
+    const snap = {
+      ts: Date.now(),
+      customers: localStorage.getItem('mgyb_customers') || '[]',
+      invoices:  localStorage.getItem('mgyb_invoices') || '[]',
+      hist:      localStorage.getItem('mgyb_hist')     || '[]',
+      issuer:    localStorage.getItem('mgyb_issuer')   || '{}',
+    };
+    const arr = JSON.parse(localStorage.getItem('mgyb_snapshots')||'[]');
+    arr.unshift(snap);
+    localStorage.setItem('mgyb_snapshots', JSON.stringify(arr.slice(0,5)));
+  } catch(e) { /* QuotaExceeded等は無視 */ }
+}
+
+function listSnapshots() {
+  try { return JSON.parse(localStorage.getItem('mgyb_snapshots')||'[]'); }
+  catch(e) { return []; }
+}
+
+function restoreSnapshot(idx) {
+  const arr = listSnapshots();
+  const snap = arr[idx];
+  if (!snap) return;
+  if (!confirm(`${new Date(snap.ts).toLocaleString()} の状態に戻します。\n現在のデータは上書きされます（直前の状態は別スナップショットに残ります）。\n\n続行しますか？`)) return;
+  /* 現状を新規スナップショットとして残してから復元 */
+  saveAutoSnapshot();
+  localStorage.setItem('mgyb_customers', snap.customers);
+  localStorage.setItem('mgyb_invoices',  snap.invoices);
+  localStorage.setItem('mgyb_hist',      snap.hist);
+  localStorage.setItem('mgyb_issuer',    snap.issuer);
+  haptic(15); showToast('スナップショットから復元しました');
+  setTimeout(()=>location.reload(), 600);
+}
 
 let _lastEstimateData = null;  /* 直近の見積もり結果（請求書化用） */
 
@@ -2041,7 +2118,9 @@ function openInvoiceDetail(id) {
     ${iss.bank ? `<div class="est-note" style="white-space:pre-line;"><strong>振込先：</strong>\n${escapeHtml(iss.bank)}</div>` : ''}
     ${inv.note ? `<div class="est-note">【備考】${escapeHtml(inv.note)}</div>` : ''}
     <div class="inv-action-row" style="padding:14px 0 0;">
-      <button class="inv-action-btn" onclick="printInvoice('${inv.id}')">🖨 PDF出力・印刷</button>
+      <button class="inv-action-btn" onclick="downloadInvoicePDF('${inv.id}')">📥 PDF保存</button>
+      <button class="inv-action-btn" onclick="printInvoice('${inv.id}')">🖨 印刷</button>
+      <button class="inv-action-btn" onclick="shareInvoiceLink('${inv.id}')">🔗 共有リンク</button>
       <button class="inv-action-btn" onclick="copyInvoiceText('${inv.id}')">📋 コピー</button>
       <button class="inv-action-btn" onclick="openInvEdit('${inv.id}')">✏ 編集</button>
     </div>`;
@@ -2136,26 +2215,170 @@ function printDoc(panelId) {
   setTimeout(()=>window.print(), 100);
 }
 
-function printInvoice(id) {
+/* スマホでも確実にPDFが保存できる：html2pdfで直接PDF生成 */
+function downloadInvoicePDF(id) {
   const inv = loadInvoices().find(i=>i.id===id);
   if (!inv) return;
-  const d = new Date(inv.issuedAt), due = new Date(inv.dueAt);
-  const ratePct = inv.taxRate === 0 ? 0 : Math.round(inv.taxRate*100);
-  const taxLabel = ratePct === 0 ? '消費税（非課税）' : `消費税（${ratePct}%）`;
+  if (typeof html2pdf === 'undefined') {
+    alert('PDFライブラリの読み込み中です。数秒後にもう一度お試しください。');
+    return;
+  }
   const iss = loadIssuer();
-  const cust = (inv.customerId ? loadCustomers().find(c=>c.id===inv.customerId) : null);
-  const custRegNo = cust?.regNo || '';
   if (!iss.name) {
-    if (!confirm('発行者情報が未設定です。\nこのまま印刷すると、適格請求書としての要件を満たしません。\n\nそれでも印刷を続けますか？')) {
+    if (!confirm('発行者情報が未設定です。\nこのまま続けると、適格請求書としての要件を満たしません。\n\nそれでもPDF保存を続けますか？')) {
       closeModal('invDetailModal'); openSettings(); return;
     }
   } else if (!iss.regNo) {
-    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\nこのまま印刷した場合、受取側は消費税の仕入税額控除ができません。\n\nそれでも印刷を続けますか？')) {
+    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\n\nそれでもPDF保存を続けますか？')) {
       closeModal('invDetailModal'); openSettings(); return;
     }
   }
   const printArea = document.getElementById('printArea');
-  printArea.innerHTML = `
+  buildInvoicePrintHTML(inv, iss, printArea);
+  printArea.style.display = 'block';
+  printArea.style.position = 'absolute';
+  printArea.style.left = '-9999px';
+  printArea.style.top = '0';
+  printArea.style.width = '210mm';
+  printArea.style.background = '#fff';
+
+  showToast('PDFを生成中…');
+  haptic(10);
+  const fname = `invoice-${inv.no || inv.id}.pdf`;
+  html2pdf().set({
+    margin: 0,
+    filename: fname,
+    image: { type:'jpeg', quality:0.96 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor:'#fff' },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  }).from(printArea.firstElementChild).save().then(()=>{
+    printArea.style.display = 'none';
+    printArea.style.position = '';
+    printArea.style.left = '';
+    printArea.style.width = '';
+    haptic(15); showToast('PDFを保存しました');
+  }).catch(err => {
+    console.error(err);
+    printArea.style.display = 'none';
+    alert('PDF生成に失敗しました。印刷ボタンをお試しください。');
+  });
+}
+
+/* 請求書を共有URLで送る：暗号化なしのbase64エンコード */
+function shareInvoiceLink(id) {
+  const inv = loadInvoices().find(i=>i.id===id);
+  if (!inv) return;
+  const iss = loadIssuer();
+  /* 共有用最小限のペイロード */
+  const payload = {
+    v: 1, inv,
+    iss: { name: iss.name, rep: iss.rep, regNo: iss.regNo, addr: iss.addr, tel: iss.tel, email: iss.email, bank: iss.bank, withholding: iss.withholding, stamp: iss.stamp }
+  };
+  let b64;
+  try {
+    const json = JSON.stringify(payload);
+    /* UTF-8安全なbase64 */
+    b64 = btoa(unescape(encodeURIComponent(json)));
+  } catch(e) { alert('共有リンク生成に失敗しました'); return; }
+  const url = `${location.origin}${location.pathname}#inv=${b64}`;
+  if (url.length > 8000) {
+    if (!confirm('共有リンクが長くなりました（'+url.length+'文字）。LINE/SMSでは送れない場合があります。\n続行しますか？\n（PDF保存→送信を推奨）')) return;
+  }
+  if (navigator.share) {
+    navigator.share({
+      title: `請求書 ${inv.no}`,
+      text: `${inv.client||'お客様'} 様への請求書（¥${inv.total.toLocaleString()}）`,
+      url
+    }).then(()=>{ haptic(12); showToast('共有しました'); })
+      .catch(()=>copyToClipboardFallback(url));
+  } else {
+    copyToClipboardFallback(url);
+  }
+}
+
+function copyToClipboardFallback(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(()=>{
+      haptic(12); showToast('リンクをコピーしました。LINE/メールに貼り付けてください');
+    }).catch(()=>prompt('このリンクをコピーしてください', text));
+  } else {
+    prompt('このリンクをコピーしてください', text);
+  }
+}
+
+/* URLで開かれた請求書を表示する（受信側） */
+function checkSharedInvoice() {
+  const m = location.hash.match(/^#inv=(.+)$/);
+  if (!m) return;
+  try {
+    const json = decodeURIComponent(escape(atob(m[1])));
+    const payload = JSON.parse(json);
+    if (!payload?.inv) throw new Error('invalid');
+    const ok = confirm(
+      `🔗 共有された請求書を受信しました\n\n` +
+      `発行元：${payload.iss?.name||'—'}\n` +
+      `請求書No.：${payload.inv.no}\n` +
+      `宛先：${payload.inv.client||'—'} 様\n` +
+      `金額：¥${payload.inv.total.toLocaleString()}\n\n` +
+      `この請求書を表示しますか？\n（あなたのデータには保存されません）`
+    );
+    location.hash = '';
+    if (!ok) return;
+    /* 一時的に表示するため、本物のデータには触れない */
+    const arr = loadInvoices();
+    const tempId = 'shared-'+Date.now();
+    const tempInv = { ...payload.inv, id: tempId };
+    /* 一時的にメモリ上に注入 */
+    window._sharedInvoiceTemp = { inv: tempInv, iss: payload.iss };
+    /* 共有用のシンプルな表示モーダルを開く */
+    openSharedInvoiceView(tempInv, payload.iss);
+  } catch(e) {
+    console.error(e);
+    alert('共有リンクの読み取りに失敗しました');
+    location.hash = '';
+  }
+}
+
+function openSharedInvoiceView(inv, iss) {
+  /* 受信側：読み取り専用の請求書表示（既存データには触れない） */
+  const printArea = document.getElementById('printArea');
+  buildInvoicePrintHTML(inv, iss||{}, printArea);
+  /* 専用モーダル風に表示 */
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(28,47,94,.6);z-index:300;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 12px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;padding:14px;box-shadow:0 12px 40px rgba(0,0,0,.3);">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <strong style="color:var(--navy);">🔗 共有された請求書</strong>
+        <button id="sharedCloseBtn" style="background:none;border:none;font-size:22px;color:#888;cursor:pointer;">×</button>
+      </div>
+      <div id="sharedInvBody" style="transform-origin:top left;"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-outline" style="flex:1;font-size:12px;padding:10px;" onclick="window.print()">🖨 印刷</button>
+        <button class="btn" style="flex:1;font-size:12px;padding:10px;" id="sharedSaveBtn">💾 自分の端末にも保存</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('sharedInvBody').appendChild(printArea.firstElementChild.cloneNode(true));
+  document.getElementById('sharedCloseBtn').onclick = () => overlay.remove();
+  document.getElementById('sharedSaveBtn').onclick = () => {
+    if (!confirm('この請求書を自分の端末にも保存しますか？')) return;
+    const arr = loadInvoices();
+    if (arr.find(i => i.no === inv.no)) { alert('同じ請求書No.が既に存在します'); return; }
+    arr.unshift({ ...inv, id: 'inv'+Date.now() });
+    saveInvoices(arr);
+    showToast('保存しました'); haptic(15);
+    overlay.remove();
+  };
+}
+
+function buildInvoicePrintHTML(inv, iss, target) {
+  const d = new Date(inv.issuedAt), due = new Date(inv.dueAt);
+  const ratePct = inv.taxRate === 0 ? 0 : Math.round(inv.taxRate*100);
+  const taxLabel = ratePct === 0 ? '消費税（非課税）' : `消費税（${ratePct}%）`;
+  const cust = (inv.customerId ? loadCustomers().find(c=>c.id===inv.customerId) : null);
+  const custRegNo = cust?.regNo || '';
+  target.innerHTML = `
     <style>
       @media print { body * { visibility:hidden; } #printArea, #printArea * { visibility:visible; } #printArea { position:absolute; left:0; top:0; width:100%; padding:14mm; display:block !important; } @page { margin:0; } }
     </style>
@@ -2240,6 +2463,23 @@ function printInvoice(id) {
         ※ ご不明な点がございましたらお気軽にお問い合わせください。
       </div>
     </div>`;
+}
+
+function printInvoice(id) {
+  const inv = loadInvoices().find(i=>i.id===id);
+  if (!inv) return;
+  const iss = loadIssuer();
+  if (!iss.name) {
+    if (!confirm('発行者情報が未設定です。\nこのまま印刷すると、適格請求書としての要件を満たしません。\n\nそれでも印刷を続けますか？')) {
+      closeModal('invDetailModal'); openSettings(); return;
+    }
+  } else if (!iss.regNo) {
+    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\nこのまま印刷した場合、受取側は消費税の仕入税額控除ができません。\n\nそれでも印刷を続けますか？')) {
+      closeModal('invDetailModal'); openSettings(); return;
+    }
+  }
+  const printArea = document.getElementById('printArea');
+  buildInvoicePrintHTML(inv, iss, printArea);
   printArea.style.display = 'block';
   setTimeout(()=>{ window.print(); setTimeout(()=>{ printArea.style.display='none'; }, 500); }, 100);
 }
@@ -2578,8 +2818,33 @@ function openSettings() {
   document.getElementById('issuerBank').value  = iss.bank  || '';
   document.getElementById('issuerWithholding').value = iss.withholding || 'off';
   renderStampPreview();
+  renderSnapshotList();
   validateRegNo();
   openModal('settingsModal');
+}
+
+function renderSnapshotList() {
+  const list = document.getElementById('snapshotList');
+  if (!list) return;
+  const snaps = listSnapshots();
+  if (snaps.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">スナップショットはまだありません</div>';
+    return;
+  }
+  list.innerHTML = snaps.map((s, i) => {
+    const dt = new Date(s.ts);
+    const customers = JSON.parse(s.customers).length;
+    const invoices  = JSON.parse(s.invoices).length;
+    const hist      = JSON.parse(s.hist).length;
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f7f8fb;border:1px solid var(--border);border-radius:8px;">
+        <div style="font-size:11px;line-height:1.5;">
+          <strong style="color:var(--navy);font-size:12px;">${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</strong>
+          <span style="color:var(--muted);">　顧客 ${customers} / 請求 ${invoices} / 履歴 ${hist}</span>
+        </div>
+        <button class="btn btn-outline" style="padding:6px 12px;font-size:11px;width:auto;" onclick="restoreSnapshot(${i})">復元</button>
+      </div>`;
+  }).join('');
 }
 
 function renderStampPreview() {
@@ -2893,6 +3158,7 @@ function checkBackupStatus() {
 addItem();
 initVoiceInput();
 checkBackupStatus();
+setTimeout(checkSharedInvoice, 200);
 /* 起動時に期日超過チェック */
 (function checkOverdueOnLoad(){
   const invs = loadInvoices();
