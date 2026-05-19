@@ -480,7 +480,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
   .topbar::before{display:none;}
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -2245,22 +2245,25 @@ function downloadInvoicePDF(id) {
   showToast('PDFを生成中…');
   haptic(10);
   const fname = `invoice-${inv.no || inv.id}.pdf`;
+  /* printArea内のdivタグ（実際の請求書）を取得 */
+  const invDiv = printArea.querySelector('div[style*="font-family"]') || printArea.querySelector('div');
+  if (!invDiv) { alert('請求書レイアウトが見つかりません'); return; }
   html2pdf().set({
-    margin: 0,
+    margin: 10,
     filename: fname,
-    image: { type:'jpeg', quality:0.96 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor:'#fff' },
-    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
-  }).from(printArea.firstElementChild).save().then(()=>{
+    image: { type:'jpeg', quality:0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor:'#fff', logging: false },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait', compress: true }
+  }).from(invDiv).save().then(()=>{
     printArea.style.display = 'none';
     printArea.style.position = '';
     printArea.style.left = '';
     printArea.style.width = '';
-    haptic(15); showToast('PDFを保存しました');
+    haptic(15); showToast('PDFをダウンロードしました');
   }).catch(err => {
-    console.error(err);
+    console.error('PDF生成エラー:', err);
     printArea.style.display = 'none';
-    alert('PDF生成に失敗しました。印刷ボタンをお試しください。');
+    alert('PDF保存に失敗しました。ブラウザを再読み込みしてお試しください。\n（ブラウザのポップアップ許可も確認してください）');
   });
 }
 
@@ -2352,14 +2355,15 @@ function openSharedInvoiceView(inv, iss) {
         <strong style="color:var(--navy);">🔗 共有された請求書</strong>
         <button id="sharedCloseBtn" style="background:none;border:none;font-size:22px;color:#888;cursor:pointer;">×</button>
       </div>
-      <div id="sharedInvBody" style="transform-origin:top left;"></div>
+      <div id="sharedInvBody" style="transform-origin:top left;overflow-y:auto;max-height:70vh;"></div>
       <div style="display:flex;gap:8px;margin-top:12px;">
         <button class="btn btn-outline" style="flex:1;font-size:12px;padding:10px;" onclick="window.print()">🖨 印刷</button>
         <button class="btn" style="flex:1;font-size:12px;padding:10px;" id="sharedSaveBtn">💾 自分の端末にも保存</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  document.getElementById('sharedInvBody').appendChild(printArea.firstElementChild.cloneNode(true));
+  const invDiv = printArea.querySelector('div[style*="font-family"]') || printArea.querySelector('div');
+  if (invDiv) document.getElementById('sharedInvBody').appendChild(invDiv.cloneNode(true));
   document.getElementById('sharedCloseBtn').onclick = () => overlay.remove();
   document.getElementById('sharedSaveBtn').onclick = () => {
     if (!confirm('この請求書を自分の端末にも保存しますか？')) return;
