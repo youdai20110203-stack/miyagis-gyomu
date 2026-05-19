@@ -480,6 +480,8 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
   .topbar::before{display:none;}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -2217,12 +2219,17 @@ function printDoc(panelId) {
   setTimeout(()=>window.print(), 100);
 }
 
-/* PDFで保存する：同一ページの印刷ダイアログを使う（最も確実）
-   印刷ダイアログで「PDFに保存」「Save as PDF」を選んでもらうため、
-   事前に手順を表示する。 */
-function downloadInvoicePDF(id) {
+/* PDF保存：html2canvas + jsPDF で直接PDFファイルを生成してダウンロード。
+   印刷ダイアログを使わない（OS依存でテキストだけ保存される問題を回避）。 */
+async function downloadInvoicePDF(id) {
   const inv = loadInvoices().find(i=>i.id===id);
   if (!inv) return;
+
+  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+    alert('PDFライブラリの読み込みが完了していません。\nページを再読み込みして数秒後にもう一度お試しください。');
+    return;
+  }
+
   const iss = loadIssuer();
   if (!iss.name) {
     if (!confirm('発行者情報が未設定です。\nこのまま続けると、適格請求書としての要件を満たしません。\n\nそれでも続けますか？')) {
@@ -2233,73 +2240,91 @@ function downloadInvoicePDF(id) {
       closeModal('invDetailModal'); openSettings(); return;
     }
   }
-  /* 手順をモーダルで明示 */
-  showPDFInstructionModal(() => {
-    /* 既存の印刷フローと同じ：printArea を使う */
-    const printArea = document.getElementById('printArea');
-    buildInvoicePrintHTML(inv, iss, printArea);
-    printArea.style.display = 'block';
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => { printArea.style.display = 'none'; }, 800);
-    }, 100);
-  });
-}
 
-/* PDF保存手順を案内するモーダル */
-function showPDFInstructionModal(onProceed) {
-  /* 「次回から表示しない」設定されてたらスキップ */
-  if (localStorage.getItem('mgyb_pdf_hint_skip') === '1') {
-    onProceed();
-    return;
+  /* オーバーレイで生成中を明示 */
+  const loadingOverlay = document.createElement('div');
+  loadingOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(28,47,94,.7);z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:900;flex-direction:column;gap:12px;';
+  loadingOverlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;"></div><div>PDFを生成中…</div><style>@keyframes spin{to{transform:rotate(360deg);}}</style>';
+  document.body.appendChild(loadingOverlay);
+  haptic(8);
+
+  /* 1. 印刷用HTMLをレンダリング先のdivに描画 */
+  const renderRoot = document.createElement('div');
+  renderRoot.id = 'pdfRenderRoot';
+  renderRoot.style.cssText = 'position:fixed;left:0;top:0;width:794px;background:#fff;z-index:-1;opacity:0;pointer-events:none;';
+  document.body.appendChild(renderRoot);
+  buildInvoicePrintHTML(inv, iss, renderRoot);
+  const invDiv = renderRoot.querySelector('div[style*="font-family"]') || renderRoot.querySelector('div');
+  if (invDiv) {
+    invDiv.style.width = '794px';
+    invDiv.style.padding = '40px';
+    invDiv.style.boxSizing = 'border-box';
+    invDiv.style.background = '#fff';
   }
-  const isIOSDev = isIOS();
-  const isAndroid = /Android/.test(navigator.userAgent);
-  const isMobile = isIOSDev || isAndroid;
-  const stepsHTML = isIOSDev ? `
-    <ol style="margin:10px 0 10px 18px;padding:0;line-height:1.9;font-size:13px;">
-      <li>印刷プレビューが表示されます</li>
-      <li>右上の <strong>共有ボタン（□↑）</strong> をタップ</li>
-      <li>「<strong>"ファイル"に保存</strong>」を選ぶ</li>
-      <li>保存先を選んで「保存」</li>
-    </ol>` : isAndroid ? `
-    <ol style="margin:10px 0 10px 18px;padding:0;line-height:1.9;font-size:13px;">
-      <li>印刷ダイアログが表示されます</li>
-      <li>送信先（プリンター欄）を「<strong>PDF形式で保存</strong>」に変更</li>
-      <li>右上の保存ボタン（PDFアイコン）をタップ</li>
-      <li>保存先を選んで「保存」</li>
-    </ol>` : `
-    <ol style="margin:10px 0 10px 18px;padding:0;line-height:1.9;font-size:13px;">
-      <li>印刷ダイアログが表示されます</li>
-      <li>送信先 / Destination を「<strong>PDFに保存</strong> / <strong>Save as PDF</strong>」に変更</li>
-      <li>「保存」/「Save」ボタンをクリック</li>
-      <li>保存先（ダウンロードフォルダなど）を選んで保存</li>
-    </ol>`;
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(28,47,94,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadein .15s ease;';
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.3);">
-      <div style="font-size:15px;font-weight:900;color:#1c2f5e;margin-bottom:8px;">📥 PDFで保存する手順</div>
-      <div style="font-size:12px;color:#666;margin-bottom:8px;line-height:1.6;">${isMobile?'スマートフォン':'PC'}での操作手順をご確認ください。</div>
-      ${stepsHTML}
-      <label style="display:flex;align-items:center;gap:6px;margin:14px 0 12px;font-size:11.5px;color:#666;cursor:pointer;">
-        <input type="checkbox" id="pdfHintSkip" style="width:auto;margin:0;">
-        次回から表示しない
-      </label>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-outline" style="flex:1;font-size:13px;padding:11px;" id="pdfHintCancel">キャンセル</button>
-        <button class="btn" style="flex:2;font-size:13px;padding:11px;" id="pdfHintOk">📥 進める</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlay);
-  document.getElementById('pdfHintCancel').onclick = () => overlay.remove();
-  document.getElementById('pdfHintOk').onclick = () => {
-    if (document.getElementById('pdfHintSkip').checked) {
-      localStorage.setItem('mgyb_pdf_hint_skip', '1');
+
+  try {
+    /* 2. フォント＆画像のロード待ち */
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    const imgs = Array.from(renderRoot.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(resolve => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+        setTimeout(resolve, 3000);
+      });
+    }));
+    /* レンダリングが安定するまで少し待つ */
+    await new Promise(r => setTimeout(r, 200));
+
+    /* 3. html2canvasでキャプチャ */
+    const canvas = await html2canvas(invDiv, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: 794,
+    });
+
+    /* 4. jsPDFでPDFファイル生成 */
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
+    const pageW = 210;
+    const pageH = 297;
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+    if (imgH <= pageH) {
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
+    } else {
+      /* 複数ページに分割 */
+      let remaining = imgH;
+      let yOffset = 0;
+      let page = 0;
+      while (remaining > 0) {
+        if (page > 0) pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
+        remaining -= pageH;
+        yOffset += pageH;
+        page++;
+        if (page > 10) break;
+      }
     }
-    overlay.remove();
-    onProceed();
-  };
+
+    const fname = `請求書_${inv.no || inv.id}_${(inv.client||'').replace(/[\\\/:*?"<>|]/g,'').slice(0,20)}.pdf`;
+    pdf.save(fname);
+
+    haptic(15);
+    showToast('PDFをダウンロードしました');
+  } catch(err) {
+    console.error('PDF生成エラー:', err);
+    alert('PDF生成に失敗しました。\nブラウザを再読み込みして再度お試しください。\n\nエラー詳細: ' + (err.message || err));
+  } finally {
+    document.body.removeChild(renderRoot);
+    document.body.removeChild(loadingOverlay);
+  }
 }
 
 /* 請求書を共有URLで送る：暗号化なしのbase64エンコード */
@@ -2442,7 +2467,7 @@ function buildInvoicePrintHTML(inv, iss, target) {
         ${iss.regNo ? `<div style="font-family:monospace;font-weight:700;color:#1c2f5e;letter-spacing:.05em;">登録番号　${escapeHtml(iss.regNo)}</div>` : ''}
         ${iss.addr ? `<div>${escapeHtml(iss.addr)}</div>` : ''}
         ${(iss.tel||iss.email) ? `<div style="color:#444;">${[iss.tel?'TEL '+iss.tel:'',iss.email].filter(Boolean).map(escapeHtml).join('　／　')}</div>` : ''}
-        ${iss.stamp ? `<img src="${iss.stamp}" style="position:absolute;top:6pt;right:10pt;width:64pt;height:64pt;object-fit:contain;mix-blend-mode:multiply;" alt="角印">` : ''}
+        ${iss.stamp ? `<img src="${iss.stamp}" style="position:absolute;top:6pt;right:10pt;width:64pt;height:64pt;object-fit:contain;" alt="角印">` : ''}
       </div>` : ''}
       <p style="font-size:11pt;margin-bottom:10pt;">下記の通りご請求申し上げます。</p>
       ${(() => {
