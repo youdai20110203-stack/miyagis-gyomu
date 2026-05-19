@@ -2217,75 +2217,89 @@ function printDoc(panelId) {
   setTimeout(()=>window.print(), 100);
 }
 
-/* 新しいウィンドウに請求書を表示し、印刷ダイアログで「PDFに保存」を選んでもらう。
-   PC/スマホ/iOS/Android すべてで動く、ブラウザ標準の最も確実なPDF生成方法。 */
+/* PDFで保存する：同一ページの印刷ダイアログを使う（最も確実）
+   印刷ダイアログで「PDFに保存」「Save as PDF」を選んでもらうため、
+   事前に手順を表示する。 */
 function downloadInvoicePDF(id) {
   const inv = loadInvoices().find(i=>i.id===id);
   if (!inv) return;
   const iss = loadIssuer();
   if (!iss.name) {
-    if (!confirm('発行者情報が未設定です。\nこのまま続けると、適格請求書としての要件を満たしません。\n\nそれでも保存しますか？')) {
+    if (!confirm('発行者情報が未設定です。\nこのまま続けると、適格請求書としての要件を満たしません。\n\nそれでも続けますか？')) {
       closeModal('invDetailModal'); openSettings(); return;
     }
   } else if (!iss.regNo) {
-    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\n\nそれでも保存しますか？')) {
+    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\n\nそれでも続けますか？')) {
       closeModal('invDetailModal'); openSettings(); return;
     }
   }
-  const tmp = document.createElement('div');
-  buildInvoicePrintHTML(inv, iss, tmp);
-  const invHTML = tmp.innerHTML;
+  /* 手順をモーダルで明示 */
+  showPDFInstructionModal(() => {
+    /* 既存の印刷フローと同じ：printArea を使う */
+    const printArea = document.getElementById('printArea');
+    buildInvoicePrintHTML(inv, iss, printArea);
+    printArea.style.display = 'block';
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => { printArea.style.display = 'none'; }, 800);
+    }, 100);
+  });
+}
 
-  const win = window.open('', '_blank', 'width=820,height=1100');
-  if (!win) {
-    alert('ポップアップがブロックされました。\nブラウザのアドレスバー右側のブロックアイコンをタップして許可してください。');
+/* PDF保存手順を案内するモーダル */
+function showPDFInstructionModal(onProceed) {
+  /* 「次回から表示しない」設定されてたらスキップ */
+  if (localStorage.getItem('mgyb_pdf_hint_skip') === '1') {
+    onProceed();
     return;
   }
-  const title = `請求書_${inv.no || inv.id}_${(inv.client||'').replace(/[\\\/:*?"<>|]/g,'')}`;
-  win.document.write(`<!DOCTYPE html>
-<html lang="ja"><head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap">
-<style>
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;font-family:'Noto Sans JP',sans-serif;background:#e8edf5;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-  .pdf-banner{position:sticky;top:0;left:0;right:0;z-index:1000;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#7c2d12;padding:14px 18px;text-align:center;font-weight:900;font-size:13.5px;border-bottom:2px solid #fbbf24;line-height:1.6;}
-  .pdf-banner kbd{display:inline-block;padding:2px 8px;background:#fff;border:1.5px solid #92400e;border-radius:4px;font-family:inherit;font-size:12px;color:#92400e;margin:0 3px;}
-  .pdf-banner .pdf-print-btn{display:inline-block;margin-top:8px;background:#1c2f5e;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:900;font-size:13px;cursor:pointer;font-family:inherit;}
-  .pdf-print-btn:hover{background:#2a3f7a;}
-  .pdf-page{max-width:210mm;margin:24px auto;background:#fff;padding:14mm;box-shadow:0 6px 24px rgba(28,47,94,.18);}
-  @media print {
-    .pdf-banner{display:none !important;}
-    html,body{background:#fff;}
-    .pdf-page{margin:0 !important;max-width:none !important;padding:14mm !important;box-shadow:none !important;}
-    @page{size:A4 portrait;margin:0;}
-  }
-</style>
-</head>
-<body>
-<div class="pdf-banner">
-  📥 PDFで保存するには：印刷ダイアログの<kbd>送信先</kbd>を <kbd>PDFに保存</kbd> または <kbd>Save as PDF</kbd> に変更してください<br>
-  <button class="pdf-print-btn" onclick="window.print()">📥 印刷／PDF保存をやり直す</button>
-</div>
-<div class="pdf-page">${invHTML}</div>
-<script>
-  window.addEventListener('load', () => {
-    /* フォント読み込みを待ってから印刷ダイアログを自動で開く */
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => setTimeout(() => window.print(), 400));
-    } else {
-      setTimeout(() => window.print(), 800);
+  const isIOSDev = isIOS();
+  const isAndroid = /Android/.test(navigator.userAgent);
+  const isMobile = isIOSDev || isAndroid;
+  const stepsHTML = isIOSDev ? `
+    <ol style="margin:10px 0 10px 18px;padding:0;line-height:1.9;font-size:13px;">
+      <li>印刷プレビューが表示されます</li>
+      <li>右上の <strong>共有ボタン（□↑）</strong> をタップ</li>
+      <li>「<strong>"ファイル"に保存</strong>」を選ぶ</li>
+      <li>保存先を選んで「保存」</li>
+    </ol>` : isAndroid ? `
+    <ol style="margin:10px 0 10px 18px;padding:0;line-height:1.9;font-size:13px;">
+      <li>印刷ダイアログが表示されます</li>
+      <li>送信先（プリンター欄）を「<strong>PDF形式で保存</strong>」に変更</li>
+      <li>右上の保存ボタン（PDFアイコン）をタップ</li>
+      <li>保存先を選んで「保存」</li>
+    </ol>` : `
+    <ol style="margin:10px 0 10px 18px;padding:0;line-height:1.9;font-size:13px;">
+      <li>印刷ダイアログが表示されます</li>
+      <li>送信先 / Destination を「<strong>PDFに保存</strong> / <strong>Save as PDF</strong>」に変更</li>
+      <li>「保存」/「Save」ボタンをクリック</li>
+      <li>保存先（ダウンロードフォルダなど）を選んで保存</li>
+    </ol>`;
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(28,47,94,.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadein .15s ease;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.3);">
+      <div style="font-size:15px;font-weight:900;color:#1c2f5e;margin-bottom:8px;">📥 PDFで保存する手順</div>
+      <div style="font-size:12px;color:#666;margin-bottom:8px;line-height:1.6;">${isMobile?'スマートフォン':'PC'}での操作手順をご確認ください。</div>
+      ${stepsHTML}
+      <label style="display:flex;align-items:center;gap:6px;margin:14px 0 12px;font-size:11.5px;color:#666;cursor:pointer;">
+        <input type="checkbox" id="pdfHintSkip" style="width:auto;margin:0;">
+        次回から表示しない
+      </label>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-outline" style="flex:1;font-size:13px;padding:11px;" id="pdfHintCancel">キャンセル</button>
+        <button class="btn" style="flex:2;font-size:13px;padding:11px;" id="pdfHintOk">📥 進める</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('pdfHintCancel').onclick = () => overlay.remove();
+  document.getElementById('pdfHintOk').onclick = () => {
+    if (document.getElementById('pdfHintSkip').checked) {
+      localStorage.setItem('mgyb_pdf_hint_skip', '1');
     }
-  });
-<\/script>
-</body></html>`);
-  win.document.close();
-  haptic(12);
-  showToast('別画面が開きます。送信先を「PDFに保存」に変更してください');
+    overlay.remove();
+    onProceed();
+  };
 }
 
 /* 請求書を共有URLで送る：暗号化なしのbase64エンコード */
