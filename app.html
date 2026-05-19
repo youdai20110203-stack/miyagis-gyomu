@@ -480,8 +480,6 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
   .topbar::before{display:none;}
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -605,7 +603,6 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
     </div>
     <div class="inv-action-row" style="padding-top:12px;padding-bottom:14px;background:var(--white);">
       <button class="inv-action-btn" onclick="copyReport()">📋 コピー</button>
-      <button class="inv-action-btn" onclick="printDoc('panel-report')">🖨 PDF出力</button>
       <button class="inv-action-btn paid-mark" onclick="saveReport()">💾 保存する</button>
     </div>
   </div>
@@ -699,7 +696,6 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       </div>
       <div class="inv-action-row" style="padding:0 16px 14px;">
         <button class="inv-action-btn" onclick="copyEstimate()">📋 コピー</button>
-        <button class="inv-action-btn" onclick="printDoc('panel-estimate')">🖨 PDF出力</button>
         <button class="inv-action-btn" onclick="convertToInvoice()">📄 請求書化</button>
         <button class="inv-action-btn paid-mark" onclick="saveEstimate()">💾 保存する</button>
       </div>
@@ -973,10 +969,11 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
         <h4 style="color:#92400e;">🚀 本契約後の機能ロードマップ</h4>
         <div class="settings-desc" style="color:#7c2d12;">体験版では下記の機能はまだ未対応です。<strong>本契約後、御社の業務に合わせて構築します。</strong></div>
         <ul style="margin:8px 0 0 0;padding-left:20px;font-size:11.5px;color:#7c2d12;line-height:1.9;">
+          <li>📄 <strong>PDF出力・印刷</strong> — 本契約版で安定動作する専用エンジン搭載</li>
           <li>☁ <strong>クラウド同期</strong> — 社長スマホ・事務員PC・現場タブレットでリアルタイム共有</li>
           <li>👥 <strong>複数ユーザー対応</strong> — 社員ごとのアカウント・権限設定</li>
           <li>📅 <strong>自動バックアップ</strong> — 毎日深夜にクラウドへ自動保存</li>
-          <li>📧 <strong>取引先へメール送信</strong> — 請求書PDFを直接送付＋送付履歴の管理</li>
+          <li>📧 <strong>取引先へメール送信</strong> — 請求書を直接送付＋送付履歴の管理</li>
           <li>🔔 <strong>入金催促の自動通知</strong> — 期日超過を翌日にLINE通知</li>
           <li>📈 <strong>月次・年次レポート</strong> — 売上推移グラフ、税額試算</li>
           <li>🤖 <strong>本物のAI連携</strong> — Claude/ChatGPT APIで日報・見積もり精度を大幅向上</li>
@@ -2059,7 +2056,7 @@ function renderInvoices() {
           <span style="font-size:15px;font-weight:900;color:var(--navy);">¥${inv.total.toLocaleString()}</span>
         </div>
         <div class="inv-action-row" style="padding:0;">
-          <button class="inv-action-btn" onclick="openInvoiceDetail('${inv.id}')">📄 詳細・印刷</button>
+          <button class="inv-action-btn" onclick="openInvoiceDetail('${inv.id}')">📄 詳細を見る</button>
           ${inv.status !== 'paid'
             ? `<button class="inv-action-btn paid-mark" onclick="markInvoicePaid('${inv.id}')">✓ 入金済にする</button>`
             : `<button class="inv-action-btn" onclick="markInvoiceUnpaid('${inv.id}')">↩ 未入金に戻す</button>`}
@@ -2122,11 +2119,9 @@ function openInvoiceDetail(id) {
   `;
   /* ボタンは固定フッターに配置 — モーダルがスクロールしてもいつでも押せる */
   document.getElementById('invDetailFoot').innerHTML = `
-    <button class="inv-action-btn" style="flex:1;min-width:46%;" onclick="downloadInvoicePDF('${inv.id}')">📥 PDFで保存</button>
     <button class="inv-action-btn" style="flex:1;min-width:46%;" onclick="shareInvoiceLink('${inv.id}')">🔗 共有リンク</button>
-    <button class="inv-action-btn" style="flex:1;min-width:30%;" onclick="copyInvoiceText('${inv.id}')">📋 コピー</button>
-    <button class="inv-action-btn" style="flex:1;min-width:30%;" onclick="openInvEdit('${inv.id}')">✏ 編集</button>
-    <button class="inv-action-btn" style="flex:1;min-width:30%;" onclick="printInvoice('${inv.id}')">🖨 印刷</button>
+    <button class="inv-action-btn" style="flex:1;min-width:46%;" onclick="copyInvoiceText('${inv.id}')">📋 コピー</button>
+    <button class="inv-action-btn" style="flex:1;min-width:46%;" onclick="openInvEdit('${inv.id}')">✏ 編集</button>
   `;
   openModal('invDetailModal');
 }
@@ -2210,122 +2205,8 @@ function newInvoiceManual() {
   openInvCreateModal(null);
 }
 
-/* ════════════════════
-   PDF出力（印刷経由）
-════════════════════ */
-function printDoc(panelId) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('print-target'));
-  document.getElementById(panelId).classList.add('print-target');
-  setTimeout(()=>window.print(), 100);
-}
-
-/* PDF保存：html2canvas + jsPDF で直接PDFファイルを生成してダウンロード。
-   印刷ダイアログを使わない（OS依存でテキストだけ保存される問題を回避）。 */
-async function downloadInvoicePDF(id) {
-  const inv = loadInvoices().find(i=>i.id===id);
-  if (!inv) return;
-
-  if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
-    alert('PDFライブラリの読み込みが完了していません。\nページを再読み込みして数秒後にもう一度お試しください。');
-    return;
-  }
-
-  const iss = loadIssuer();
-  if (!iss.name) {
-    if (!confirm('発行者情報が未設定です。\nこのまま続けると、適格請求書としての要件を満たしません。\n\nそれでも続けますか？')) {
-      closeModal('invDetailModal'); openSettings(); return;
-    }
-  } else if (!iss.regNo) {
-    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\n\nそれでも続けますか？')) {
-      closeModal('invDetailModal'); openSettings(); return;
-    }
-  }
-
-  /* オーバーレイで生成中を明示 */
-  const loadingOverlay = document.createElement('div');
-  loadingOverlay.style.cssText = 'position:fixed;inset:0;background:rgba(28,47,94,.7);z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:900;flex-direction:column;gap:12px;';
-  loadingOverlay.innerHTML = '<div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;"></div><div>PDFを生成中…</div><style>@keyframes spin{to{transform:rotate(360deg);}}</style>';
-  document.body.appendChild(loadingOverlay);
-  haptic(8);
-
-  /* 1. 印刷用HTMLをレンダリング先のdivに描画 */
-  const renderRoot = document.createElement('div');
-  renderRoot.id = 'pdfRenderRoot';
-  renderRoot.style.cssText = 'position:fixed;left:0;top:0;width:794px;background:#fff;z-index:-1;opacity:0;pointer-events:none;';
-  document.body.appendChild(renderRoot);
-  buildInvoicePrintHTML(inv, iss, renderRoot);
-  const invDiv = renderRoot.querySelector('div[style*="font-family"]') || renderRoot.querySelector('div');
-  if (invDiv) {
-    invDiv.style.width = '794px';
-    invDiv.style.padding = '40px';
-    invDiv.style.boxSizing = 'border-box';
-    invDiv.style.background = '#fff';
-  }
-
-  try {
-    /* 2. フォント＆画像のロード待ち */
-    if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    const imgs = Array.from(renderRoot.querySelectorAll('img'));
-    await Promise.all(imgs.map(img => {
-      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-      return new Promise(resolve => {
-        img.onload = () => resolve();
-        img.onerror = () => resolve();
-        setTimeout(resolve, 3000);
-      });
-    }));
-    /* レンダリングが安定するまで少し待つ */
-    await new Promise(r => setTimeout(r, 200));
-
-    /* 3. html2canvasでキャプチャ */
-    const canvas = await html2canvas(invDiv, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      windowWidth: 794,
-    });
-
-    /* 4. jsPDFでPDFファイル生成 */
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4', compress:true });
-    const pageW = 210;
-    const pageH = 297;
-    const imgW = pageW;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    const imgData = canvas.toDataURL('image/jpeg', 0.95);
-
-    if (imgH <= pageH) {
-      pdf.addImage(imgData, 'JPEG', 0, 0, imgW, imgH);
-    } else {
-      /* 複数ページに分割 */
-      let remaining = imgH;
-      let yOffset = 0;
-      let page = 0;
-      while (remaining > 0) {
-        if (page > 0) pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH);
-        remaining -= pageH;
-        yOffset += pageH;
-        page++;
-        if (page > 10) break;
-      }
-    }
-
-    const fname = `請求書_${inv.no || inv.id}_${(inv.client||'').replace(/[\\\/:*?"<>|]/g,'').slice(0,20)}.pdf`;
-    pdf.save(fname);
-
-    haptic(15);
-    showToast('PDFをダウンロードしました');
-  } catch(err) {
-    console.error('PDF生成エラー:', err);
-    alert('PDF生成に失敗しました。\nブラウザを再読み込みして再度お試しください。\n\nエラー詳細: ' + (err.message || err));
-  } finally {
-    document.body.removeChild(renderRoot);
-    document.body.removeChild(loadingOverlay);
-  }
-}
+/* PDF保存・印刷機能は削除済み（動作が不安定だったため）
+   代わりに「📋 コピー」「🔗 共有リンク」で請求書を取引先に送ってください。 */
 
 /* 請求書を共有URLで送る：暗号化なしのbase64エンコード */
 function shareInvoiceLink(id) {
@@ -2417,7 +2298,6 @@ function openSharedInvoiceView(inv, iss) {
       </div>
       <div id="sharedInvBody" style="transform-origin:top left;overflow-y:auto;max-height:70vh;"></div>
       <div style="display:flex;gap:8px;margin-top:12px;">
-        <button class="btn btn-outline" style="flex:1;font-size:12px;padding:10px;" onclick="window.print()">🖨 印刷</button>
         <button class="btn" style="flex:1;font-size:12px;padding:10px;" id="sharedSaveBtn">💾 自分の端末にも保存</button>
       </div>
     </div>`;
@@ -2529,24 +2409,6 @@ function buildInvoicePrintHTML(inv, iss, target) {
     </div>`;
 }
 
-function printInvoice(id) {
-  const inv = loadInvoices().find(i=>i.id===id);
-  if (!inv) return;
-  const iss = loadIssuer();
-  if (!iss.name) {
-    if (!confirm('発行者情報が未設定です。\nこのまま印刷すると、適格請求書としての要件を満たしません。\n\nそれでも印刷を続けますか？')) {
-      closeModal('invDetailModal'); openSettings(); return;
-    }
-  } else if (!iss.regNo) {
-    if (!confirm('適格請求書発行事業者の登録番号が未設定です。\nこのまま印刷した場合、受取側は消費税の仕入税額控除ができません。\n\nそれでも印刷を続けますか？')) {
-      closeModal('invDetailModal'); openSettings(); return;
-    }
-  }
-  const printArea = document.getElementById('printArea');
-  buildInvoicePrintHTML(inv, iss, printArea);
-  printArea.style.display = 'block';
-  setTimeout(()=>{ window.print(); setTimeout(()=>{ printArea.style.display='none'; }, 500); }, 100);
-}
 
 /* ════════════════════
    音声入力（Web Speech API）
@@ -2737,7 +2599,7 @@ renderInvoices = function() {
           <span style="font-size:15px;font-weight:900;color:var(--navy);">¥${inv.total.toLocaleString()}</span>
         </div>
         <div class="inv-action-row" style="padding:0;">
-          <button class="inv-action-btn" onclick="openInvoiceDetail('${inv.id}')">📄 詳細・印刷</button>
+          <button class="inv-action-btn" onclick="openInvoiceDetail('${inv.id}')">📄 詳細を見る</button>
           ${inv.status !== 'paid'
             ? `<button class="inv-action-btn paid-mark" onclick="markInvoicePaid('${inv.id}')">✓ 入金済にする</button>`
             : `<button class="inv-action-btn" onclick="markInvoiceUnpaid('${inv.id}')">↩ 未入金に戻す</button>`}
