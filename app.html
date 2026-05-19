@@ -907,6 +907,24 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
           <div class="field"><label>メール</label><input type="text" id="issuerEmail" placeholder="例：info@example.jp"></div>
         </div>
         <div class="field"><label>振込先口座（任意）</label><textarea id="issuerBank" style="min-height:55px;" placeholder="例：七十七銀行 仙台支店 普通 1234567 名義：サトウケンセツ"></textarea></div>
+        <div class="field">
+          <label>角印・社印（任意・請求書に自動貼付）</label>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="file" id="issuerStampFile" accept="image/*" onchange="onStampUpload(event)" style="display:none;">
+            <button type="button" class="btn btn-outline" style="flex:1;padding:9px;font-size:12px;" onclick="document.getElementById('issuerStampFile').click()">📷 印鑑画像を選択</button>
+            <button type="button" class="btn btn-outline" style="padding:9px 14px;font-size:12px;color:#b91c1c;" onclick="clearStamp()">削除</button>
+          </div>
+          <div id="issuerStampPreview" style="margin-top:10px;text-align:center;"></div>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:6px;">背景が透過しているPNG画像（300x300px推奨）が最もきれいです。</div>
+        </div>
+        <div class="field"><label>源泉徴収（請求書に自動表示）</label>
+          <select id="issuerWithholding">
+            <option value="off">使わない（法人取引中心）</option>
+            <option value="10.21">10.21%（個人事業主：報酬100万以下）</option>
+            <option value="20.42">20.42%（個人事業主：報酬100万超部分）</option>
+          </select>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:6px;">設計・調査など、報酬・料金として支払われる業務でONにしてください。</div>
+        </div>
         <div class="settings-btn-row">
           <button class="settings-btn primary" onclick="saveIssuer()">発行者情報を保存</button>
         </div>
@@ -919,6 +937,17 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
           <button class="settings-btn primary" onclick="exportAllData()">📥 全データをダウンロード</button>
         </div>
         <div id="lastBackupInfo" style="font-size:10.5px;color:var(--muted);margin-top:8px;text-align:center;"></div>
+      </div>
+
+      <div class="settings-sec">
+        <h4>📊 会計ソフト連携（CSV出力）</h4>
+        <div class="settings-desc">請求書データを会計ソフトに取り込める形式で書き出します。<br><strong style="color:var(--navy);">freee / 弥生会計 / マネーフォワード</strong> で読み込めます。</div>
+        <div class="settings-btn-row">
+          <button class="settings-btn" onclick="exportInvoicesCSV('freee')">freee形式</button>
+          <button class="settings-btn" onclick="exportInvoicesCSV('yayoi')">弥生形式</button>
+          <button class="settings-btn" onclick="exportInvoicesCSV('generic')">汎用形式</button>
+        </div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:8px;">未入金の請求書も含めて全件出力します。出力後、会計ソフト側で「仕訳取込」を実行してください。</div>
       </div>
 
       <div class="settings-sec">
@@ -1391,29 +1420,65 @@ function saveReport() {
    見積もりロジック
 ════════════════════ */
 const WORK_TYPES = [
-  { key:'concrete',  label:'コンクリート打設',          unit:'m³',  materialUnit:18000, laborUnit:12000 },
-  { key:'formwork',  label:'型枠工事',                  unit:'m²',  materialUnit:3500,  laborUnit:4500  },
-  { key:'rebar',     label:'鉄筋工事',                  unit:'t',   materialUnit:90000, laborUnit:40000 },
-  { key:'foundation',label:'基礎工事',                  unit:'式',  materialUnit:150000,laborUnit:120000 },
-  { key:'scaffold',  label:'足場設置・撤去',            unit:'m²',  materialUnit:700,   laborUnit:600   },
-  { key:'demolish',  label:'解体工事',                  unit:'m²',  materialUnit:3000,  laborUnit:8000  },
-  { key:'exterior',  label:'外壁塗装',                  unit:'m²',  materialUnit:1800,  laborUnit:2200  },
-  { key:'roofing',   label:'屋根工事',                  unit:'m²',  materialUnit:8000,  laborUnit:5000  },
-  { key:'plumbing',  label:'給排水設備工事',            unit:'式',  materialUnit:200000,laborUnit:150000 },
-  { key:'electric',  label:'電気工事',                  unit:'式',  materialUnit:120000,laborUnit:80000 },
-  { key:'earthwork', label:'土工（掘削・埋戻し）',      unit:'m³',  materialUnit:1500,  laborUnit:3500  },
-  { key:'paving',    label:'舗装工事',                  unit:'m²',  materialUnit:4000,  laborUnit:3000  },
-  { key:'interior',  label:'内装工事（クロス・床）',    unit:'m²',  materialUnit:3000,  laborUnit:4000  },
-  { key:'cleanup',   label:'建設廃棄物処理・清掃',      unit:'m²',  materialUnit:500,   laborUnit:800   },
-  { key:'daily_rep', label:'日報・書類作成（月額換算）',unit:'件/月',materialUnit:0,     laborUnit:12000 },
-  { key:'estimate',  label:'見積もり作成代行（件）',     unit:'件',  materialUnit:0,     laborUnit:8000  },
-  { key:'custom',    label:'その他（金額直接入力）',    unit:'式',  materialUnit:0,     laborUnit:0     },
+  /* 躯体・土木 */
+  { key:'concrete',  label:'コンクリート打設',          unit:'m³',  materialUnit:18000, laborUnit:12000, cat:'躯体・土木' },
+  { key:'formwork',  label:'型枠工事',                  unit:'m²',  materialUnit:3500,  laborUnit:4500,  cat:'躯体・土木' },
+  { key:'rebar',     label:'鉄筋工事',                  unit:'t',   materialUnit:90000, laborUnit:40000, cat:'躯体・土木' },
+  { key:'foundation',label:'基礎工事',                  unit:'式',  materialUnit:150000,laborUnit:120000,cat:'躯体・土木' },
+  { key:'steel',     label:'鉄骨工事',                  unit:'t',   materialUnit:180000,laborUnit:80000, cat:'躯体・土木' },
+  { key:'earthwork', label:'土工（掘削・埋戻し）',      unit:'m³',  materialUnit:1500,  laborUnit:3500,  cat:'躯体・土木' },
+  { key:'paving',    label:'舗装工事',                  unit:'m²',  materialUnit:4000,  laborUnit:3000,  cat:'躯体・土木' },
+  { key:'demolish',  label:'解体工事',                  unit:'m²',  materialUnit:3000,  laborUnit:8000,  cat:'躯体・土木' },
+
+  /* 仮設・足場 */
+  { key:'scaffold',  label:'足場設置・撤去',            unit:'m²',  materialUnit:700,   laborUnit:600,   cat:'仮設・足場' },
+  { key:'fence',     label:'仮囲い・養生',              unit:'m',   materialUnit:1200,  laborUnit:800,   cat:'仮設・足場' },
+  { key:'crane',     label:'重機・クレーン搬入',        unit:'日',  materialUnit:0,     laborUnit:80000, cat:'仮設・足場' },
+
+  /* 屋根・外装 */
+  { key:'roofing',   label:'屋根工事（葺替・修繕）',    unit:'m²',  materialUnit:8000,  laborUnit:5000,  cat:'屋根・外装' },
+  { key:'exterior',  label:'外壁塗装',                  unit:'m²',  materialUnit:1800,  laborUnit:2200,  cat:'屋根・外装' },
+  { key:'siding',    label:'サイディング張替',          unit:'m²',  materialUnit:5500,  laborUnit:3500,  cat:'屋根・外装' },
+  { key:'waterproof',label:'防水工事（屋上・ベランダ）',unit:'m²',  materialUnit:4500,  laborUnit:3500,  cat:'屋根・外装' },
+  { key:'sash',      label:'サッシ・窓ガラス工事',      unit:'箇所',materialUnit:35000, laborUnit:15000, cat:'屋根・外装' },
+
+  /* 内装 */
+  { key:'interior',  label:'内装工事（クロス・床）',    unit:'m²',  materialUnit:3000,  laborUnit:4000,  cat:'内装' },
+  { key:'tile',      label:'タイル工事',                unit:'m²',  materialUnit:4500,  laborUnit:5000,  cat:'内装' },
+  { key:'plaster',   label:'左官工事（モルタル・漆喰）',unit:'m²',  materialUnit:2000,  laborUnit:5000,  cat:'内装' },
+  { key:'carpentry', label:'造作大工工事',              unit:'式',  materialUnit:80000, laborUnit:120000,cat:'内装' },
+  { key:'insulation',label:'断熱・気密工事',            unit:'m²',  materialUnit:2800,  laborUnit:2200,  cat:'内装' },
+
+  /* 設備 */
+  { key:'plumbing',  label:'給排水設備工事',            unit:'式',  materialUnit:200000,laborUnit:150000,cat:'設備' },
+  { key:'electric',  label:'電気工事',                  unit:'式',  materialUnit:120000,laborUnit:80000, cat:'設備' },
+  { key:'hvac',      label:'空調・換気設備工事',        unit:'台',  materialUnit:120000,laborUnit:50000, cat:'設備' },
+  { key:'gas',       label:'ガス配管工事',              unit:'式',  materialUnit:80000, laborUnit:60000, cat:'設備' },
+  { key:'fire',      label:'消防設備工事',              unit:'式',  materialUnit:180000,laborUnit:100000,cat:'設備' },
+  { key:'solar',     label:'太陽光パネル設置',          unit:'kW',  materialUnit:180000,laborUnit:40000, cat:'設備' },
+
+  /* その他 */
+  { key:'transport', label:'資材運搬・搬入',            unit:'回',  materialUnit:0,     laborUnit:25000, cat:'その他' },
+  { key:'cleanup',   label:'建設廃棄物処理・清掃',      unit:'m²',  materialUnit:500,   laborUnit:800,   cat:'その他' },
+  { key:'survey',    label:'測量・調査',                unit:'日',  materialUnit:0,     laborUnit:60000, cat:'その他' },
+  { key:'design',    label:'設計・図面作成',            unit:'式',  materialUnit:0,     laborUnit:150000,cat:'その他' },
+  { key:'daily_rep', label:'日報・書類作成（月額換算）',unit:'件/月',materialUnit:0,     laborUnit:12000, cat:'その他' },
+  { key:'estimate',  label:'見積もり作成代行（件）',    unit:'件',  materialUnit:0,     laborUnit:8000,  cat:'その他' },
+  { key:'custom',    label:'その他（金額直接入力）',    unit:'式',  materialUnit:0,     laborUnit:0,     cat:'その他' },
 ];
 
 let itemCount = 0;
 
 function buildWorkTypeOptions() {
-  return WORK_TYPES.map(w=>`<option value="${w.key}">${w.label}（単位：${w.unit}）</option>`).join('');
+  const cats = [];
+  const byCat = {};
+  WORK_TYPES.forEach(w => {
+    if (!byCat[w.cat]) { byCat[w.cat] = []; cats.push(w.cat); }
+    byCat[w.cat].push(w);
+  });
+  return cats.map(cat =>
+    `<optgroup label="${cat}">${byCat[cat].map(w=>`<option value="${w.key}">${w.label}（単位：${w.unit}）</option>`).join('')}</optgroup>`
+  ).join('');
 }
 
 function addItem() {
@@ -1936,11 +2001,12 @@ function openInvoiceDetail(id) {
   const cust = (inv.customerId ? loadCustomers().find(c=>c.id===inv.customerId) : null);
   const custRegNo = cust?.regNo || '';
   const issuerBlock = iss.name ? `
-    <div style="padding:12px 14px;background:#eef3ff;border-bottom:1px solid var(--border);font-size:11.5px;line-height:1.7;">
+    <div style="padding:12px 14px;background:#eef3ff;border-bottom:1px solid var(--border);font-size:11.5px;line-height:1.7;position:relative;">
       <div style="font-weight:900;color:var(--navy);font-size:12.5px;">${escapeHtml(iss.name)}${iss.rep?'　'+escapeHtml(iss.rep):''}</div>
       ${iss.regNo ? `<div style="font-family:monospace;color:var(--navy);font-weight:700;letter-spacing:.04em;">登録番号：${escapeHtml(iss.regNo)}</div>` : `<div style="color:#b91c1c;font-weight:700;">⚠ 適格請求書登録番号 未設定</div>`}
       ${iss.addr ? `<div style="color:var(--muted);">${escapeHtml(iss.addr)}</div>` : ''}
       ${(iss.tel||iss.email) ? `<div style="color:var(--muted);">${[iss.tel,iss.email].filter(Boolean).map(escapeHtml).join(' / ')}</div>` : ''}
+      ${iss.stamp ? `<img src="${iss.stamp}" style="position:absolute;top:8px;right:12px;width:64px;height:64px;object-fit:contain;opacity:.95;mix-blend-mode:multiply;" alt="角印">` : ''}
     </div>` : `
     <div style="padding:10px 14px;background:#fee2e2;color:#991b1b;font-size:11.5px;border-bottom:1px solid var(--border);">
       ⚠ 発行者情報が未設定です。<a href="#" onclick="closeModal('invDetailModal');openSettings();return false;" style="color:#991b1b;text-decoration:underline;font-weight:700;">設定から登録</a>してください。
@@ -1962,6 +2028,15 @@ function openInvoiceDetail(id) {
         <div class="est-total-row"><span class="est-total-label">消費税（${ratePct}%）</span><span class="est-total-val">¥${inv.tax.toLocaleString()}</span></div>
       ` : `<div class="est-total-row"><span class="est-total-label">${taxLabel}</span><span class="est-total-val">¥${inv.tax.toLocaleString()}</span></div>`}
       <div class="est-total-row grand"><span class="est-total-label" style="font-weight:900;color:var(--navy);font-size:13px;">合計（税込）</span><span class="est-total-val">¥${inv.total.toLocaleString()}</span></div>
+      ${(() => {
+        const wRate = parseFloat(iss.withholding) || 0;
+        if (!wRate) return '';
+        const wAmt = Math.floor(inv.subtotal * (wRate/100));
+        const payable = inv.total - wAmt;
+        return `
+          <div class="est-total-row"><span class="est-total-label">源泉徴収（${wRate}%）</span><span class="est-total-val">- ¥${wAmt.toLocaleString()}</span></div>
+          <div class="est-total-row grand" style="background:#fff7e6;"><span class="est-total-label" style="font-weight:900;color:#b45309;font-size:13px;">ご請求金額（差引後）</span><span class="est-total-val" style="color:#b45309;">¥${payable.toLocaleString()}</span></div>`;
+      })()}
     </div>
     ${iss.bank ? `<div class="est-note" style="white-space:pre-line;"><strong>振込先：</strong>\n${escapeHtml(iss.bank)}</div>` : ''}
     ${inv.note ? `<div class="est-note">【備考】${escapeHtml(inv.note)}</div>` : ''}
@@ -2100,16 +2175,23 @@ function printInvoice(id) {
         </div>
       </div>
       ${iss.name ? `
-      <div style="border:1.5px solid #1c2f5e;padding:9pt 12pt;margin-bottom:14pt;font-size:10pt;line-height:1.7;background:#f7f8fb;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+      <div style="border:1.5px solid #1c2f5e;padding:9pt 12pt;margin-bottom:14pt;font-size:10pt;line-height:1.7;background:#f7f8fb;-webkit-print-color-adjust:exact;print-color-adjust:exact;position:relative;">
         <div style="font-size:12pt;font-weight:900;color:#1c2f5e;margin-bottom:2pt;">${escapeHtml(iss.name)}${iss.rep?'　'+escapeHtml(iss.rep):''}</div>
         ${iss.regNo ? `<div style="font-family:monospace;font-weight:700;color:#1c2f5e;letter-spacing:.05em;">登録番号　${escapeHtml(iss.regNo)}</div>` : ''}
         ${iss.addr ? `<div>${escapeHtml(iss.addr)}</div>` : ''}
         ${(iss.tel||iss.email) ? `<div style="color:#444;">${[iss.tel?'TEL '+iss.tel:'',iss.email].filter(Boolean).map(escapeHtml).join('　／　')}</div>` : ''}
+        ${iss.stamp ? `<img src="${iss.stamp}" style="position:absolute;top:6pt;right:10pt;width:64pt;height:64pt;object-fit:contain;mix-blend-mode:multiply;" alt="角印">` : ''}
       </div>` : ''}
       <p style="font-size:11pt;margin-bottom:10pt;">下記の通りご請求申し上げます。</p>
-      <div style="background:#1c2f5e;color:#fff;padding:10pt 14pt;font-size:14pt;font-weight:900;letter-spacing:.05em;margin-bottom:14pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-        ご請求金額　¥${inv.total.toLocaleString()}（税込）
-      </div>
+      ${(() => {
+        const wRate = parseFloat(iss.withholding) || 0;
+        if (!wRate) {
+          return `<div style="background:#1c2f5e;color:#fff;padding:10pt 14pt;font-size:14pt;font-weight:900;letter-spacing:.05em;margin-bottom:14pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;">ご請求金額　¥${inv.total.toLocaleString()}（税込）</div>`;
+        }
+        const wAmt = Math.floor(inv.subtotal * (wRate/100));
+        const payable = inv.total - wAmt;
+        return `<div style="background:#1c2f5e;color:#fff;padding:10pt 14pt;font-size:14pt;font-weight:900;letter-spacing:.05em;margin-bottom:14pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;">ご請求金額　¥${payable.toLocaleString()}　<span style="font-size:10pt;font-weight:400;opacity:.85;">（税込¥${inv.total.toLocaleString()} − 源泉¥${wAmt.toLocaleString()}）</span></div>`;
+      })()}
       <table style="width:100%;border-collapse:collapse;font-size:10.5pt;margin-bottom:14pt;">
         <thead>
           <tr style="background:#eef3ff;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
@@ -2137,6 +2219,18 @@ function printInvoice(id) {
             <td colspan="3" style="padding:9pt 8pt;text-align:right;border:1px solid #1c2f5e;font-weight:900;font-size:12pt;">合計（税込）</td>
             <td style="padding:9pt 8pt;text-align:right;border:1px solid #1c2f5e;font-weight:900;font-size:14pt;color:#1c2f5e;">¥${inv.total.toLocaleString()}</td>
           </tr>
+          ${(() => {
+            const wRate = parseFloat(iss.withholding) || 0;
+            if (!wRate) return '';
+            const wAmt = Math.floor(inv.subtotal * (wRate/100));
+            const payable = inv.total - wAmt;
+            return `
+            <tr><td colspan="3" style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">源泉徴収（${wRate}%）</td><td style="padding:6pt 8pt;text-align:right;border:1px solid #c8d4f0;">- ¥${wAmt.toLocaleString()}</td></tr>
+            <tr style="background:#fff7e6;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+              <td colspan="3" style="padding:9pt 8pt;text-align:right;border:1.5px solid #b45309;font-weight:900;font-size:12pt;color:#b45309;">ご請求金額（差引後）</td>
+              <td style="padding:9pt 8pt;text-align:right;border:1.5px solid #b45309;font-weight:900;font-size:14pt;color:#b45309;">¥${payable.toLocaleString()}</td>
+            </tr>`;
+          })()}
         </tfoot>
       </table>
       ${iss.bank ? `<div style="border:1px solid #1c2f5e;padding:8pt 12pt;background:#f7f8fb;font-size:10pt;margin-bottom:10pt;white-space:pre-line;-webkit-print-color-adjust:exact;print-color-adjust:exact;"><strong style="color:#1c2f5e;">お振込先：</strong>\n${escapeHtml(iss.bank)}</div>` : ''}
@@ -2482,8 +2576,43 @@ function openSettings() {
   document.getElementById('issuerTel').value   = iss.tel   || '';
   document.getElementById('issuerEmail').value = iss.email || '';
   document.getElementById('issuerBank').value  = iss.bank  || '';
+  document.getElementById('issuerWithholding').value = iss.withholding || 'off';
+  renderStampPreview();
   validateRegNo();
   openModal('settingsModal');
+}
+
+function renderStampPreview() {
+  const iss = loadIssuer();
+  const el = document.getElementById('issuerStampPreview');
+  if (!el) return;
+  el.innerHTML = iss.stamp
+    ? `<img src="${iss.stamp}" style="max-width:90px;max-height:90px;border:1px dashed var(--border);border-radius:6px;padding:4px;background:#fff;" alt="角印プレビュー">`
+    : '<div style="font-size:11px;color:var(--muted);">未登録</div>';
+}
+
+function onStampUpload(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  if (file.size > 500*1024) { alert('画像サイズが大きすぎます（500KB以下を推奨）'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const iss = loadIssuer();
+    iss.stamp = ev.target.result;
+    localStorage.setItem('mgyb_issuer', JSON.stringify(iss));
+    renderStampPreview();
+    haptic(10); showToast('角印を登録しました');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearStamp() {
+  if (!confirm('登録済みの角印を削除しますか？')) return;
+  const iss = loadIssuer();
+  delete iss.stamp;
+  localStorage.setItem('mgyb_issuer', JSON.stringify(iss));
+  renderStampPreview();
+  showToast('角印を削除しました');
 }
 
 /* ════════════════════
@@ -2500,6 +2629,7 @@ function saveIssuer() {
     alert('登録番号の形式が正しくありません。「T」＋数字13桁で入力してください。\n例：T1234567890123');
     return;
   }
+  const prev = loadIssuer();
   const data = {
     name:  document.getElementById('issuerName').value.trim(),
     rep:   document.getElementById('issuerRep').value.trim(),
@@ -2508,6 +2638,8 @@ function saveIssuer() {
     tel:   document.getElementById('issuerTel').value.trim(),
     email: document.getElementById('issuerEmail').value.trim(),
     bank:  document.getElementById('issuerBank').value.trim(),
+    withholding: document.getElementById('issuerWithholding').value || 'off',
+    stamp: prev.stamp || '',
   };
   if (!data.name) { alert('屋号・会社名は必須です'); return; }
   localStorage.setItem('mgyb_issuer', JSON.stringify(data));
@@ -2563,6 +2695,59 @@ function exportAllData() {
   showToast('バックアップを保存しました');
   setTimeout(renderSettingsStats, 100);
   document.getElementById('lastBackupInfo').textContent = `最終バックアップ：${new Date().toLocaleString()}`;
+}
+
+function exportInvoicesCSV(format) {
+  const arr = loadInvoices();
+  if (arr.length === 0) { alert('出力する請求書がありません'); return; }
+  const iss = loadIssuer();
+  const fmt = d => `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  const esc = v => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  let header, rows;
+  if (format === 'freee') {
+    header = ['発生日','タイプ','勘定科目','税区分','金額','税額','取引先','備考','請求書番号','支払期日'];
+    rows = arr.map(inv => [
+      fmt(new Date(inv.issuedAt)), '収入', '売上高',
+      inv.taxRate === 0.08 ? '課税売上8%（軽）' : inv.taxRate === 0.1 ? '課税売上10%' : '対象外',
+      inv.subtotal, inv.tax, inv.client || '', inv.note || '', inv.no || '', fmt(new Date(inv.dueAt))
+    ]);
+  } else if (format === 'yayoi') {
+    header = ['識別フラグ','伝票No','決算','取引日付','借方勘定科目','借方補助科目','借方部門','借方税区分','借方金額','借方税金額','貸方勘定科目','貸方補助科目','貸方部門','貸方税区分','貸方金額','貸方税金額','摘要','番号'];
+    rows = arr.map(inv => [
+      '2000', '', '', fmt(new Date(inv.issuedAt)), '売掛金','','','対象外', inv.total, 0,
+      '売上高','','', inv.taxRate === 0.08 ? '課税売上8%（軽）' : inv.taxRate === 0.1 ? '課税売上10%' : '対象外',
+      inv.subtotal, inv.tax, (inv.client||'') + ' / ' + (inv.no||''), inv.no || ''
+    ]);
+  } else {
+    header = ['請求書番号','発行日','支払期日','取引先','登録番号','小計','税率','消費税','合計','源泉徴収','差引請求額','ステータス','備考'];
+    const wRate = parseFloat(iss.withholding) || 0;
+    rows = arr.map(inv => {
+      const w = wRate ? Math.floor(inv.subtotal * (wRate/100)) : 0;
+      const payable = inv.total - w;
+      const status = inv.status === 'paid' ? '入金済' : (new Date(inv.dueAt) < new Date() ? '期日超過' : '未入金');
+      return [
+        inv.no || '', fmt(new Date(inv.issuedAt)), fmt(new Date(inv.dueAt)),
+        inv.client || '', '',
+        inv.subtotal, (inv.taxRate*100)+'%', inv.tax, inv.total,
+        w, payable, status, inv.note || ''
+      ];
+    });
+  }
+  const csv = [header, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
+  /* BOMつきUTF-8（Excelで文字化けしない） */
+  const blob = new Blob(['﻿' + csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `invoices-${format}-${stamp}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  haptic(12); showToast(`${arr.length}件を${format==='freee'?'freee':format==='yayoi'?'弥生':'汎用'}形式で出力しました`);
 }
 
 function handleRestoreFile(ev) {
