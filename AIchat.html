@@ -389,7 +389,12 @@
       : '/api/chat';
 
     let currentMode = 'consult';
-    let history = [];
+    let histories = {
+      consult: [],
+      business: [],
+      assistant: [],
+      general: []
+    };
     let isLoading = false;
 
     const WELCOME_MESSAGES = {
@@ -439,9 +444,18 @@
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentMode = btn.dataset.mode;
-      history = [];
       messageInput.value = '';
-      renderWelcome();
+
+      // モード切替: 既存の会話があれば表示、なければウェルカム画面
+      if (histories[currentMode].length === 0) {
+        renderWelcome();
+      } else {
+        chatContainer.innerHTML = '';
+        histories[currentMode].forEach(msg => {
+          addMessage(msg.role, msg.content);
+        });
+      }
+
       setTimeout(() => messageInput.focus(), 0);
     });
 
@@ -524,7 +538,7 @@
       isLoading = true;
       sendBtn.disabled = true;
       addMessage('user', text);
-      history.push({ role: 'user', content: text });
+      histories[currentMode].push({ role: 'user', content: text });
       messageInput.value = '';
       autoResize();
       addTyping();
@@ -533,7 +547,7 @@
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: history, mode: currentMode })
+          body: JSON.stringify({ messages: histories[currentMode], mode: currentMode })
         });
 
         removeTyping();
@@ -552,7 +566,7 @@
         const data = await res.json();
         const reply = data.reply || '（応答がありません）';
         addMessage('ai', reply);
-        history.push({ role: 'assistant', content: reply });
+        histories[currentMode].push({ role: 'assistant', content: reply });
       } catch (e) {
         removeTyping();
         const errorDiv = document.createElement('div');
