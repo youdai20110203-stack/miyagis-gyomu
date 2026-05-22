@@ -434,13 +434,15 @@
     // Mode switching
     modesContainer.addEventListener('click', (e) => {
       const btn = e.target.closest('.mode-btn');
-      if (!btn) return;
+      if (!btn || btn.classList.contains('active')) return;
 
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentMode = btn.dataset.mode;
       history = [];
+      messageInput.value = '';
       renderWelcome();
+      setTimeout(() => messageInput.focus(), 0);
     });
 
     // Welcome screen
