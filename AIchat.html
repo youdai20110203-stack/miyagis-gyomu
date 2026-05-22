@@ -277,6 +277,145 @@
       border-radius: var(--r-sm);
       line-height: 1.5;
     }
+
+    /* ===== 日報フォーム ===== */
+    .report-form {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--sh);
+      overflow: hidden;
+    }
+    .report-form-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .report-form-head .ico {
+      width: 32px; height: 32px;
+      background: #eef3ff;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .report-form-head h3 { font-size: 14px; font-weight: 900; color: var(--navy); }
+    .report-form-head p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .report-form-body { padding: 16px; }
+    .report-field { margin-bottom: 14px; }
+    .report-field label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .report-field input, .report-field textarea {
+      width: 100%;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 11px 13px;
+      outline: none;
+      background: var(--off);
+      transition: border-color 0.15s;
+    }
+    .report-field input:focus, .report-field textarea:focus {
+      border-color: var(--navy-mid);
+      background: var(--white);
+    }
+    .report-field textarea { resize: vertical; min-height: 120px; line-height: 1.7; }
+    .report-submit {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: var(--r-sm);
+      background: linear-gradient(135deg, var(--navy), var(--navy-mid));
+      color: var(--white);
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: filter 0.15s;
+    }
+    .report-submit:hover { filter: brightness(1.1); }
+    .report-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ===== 日報ドキュメント ===== */
+    .rdoc {
+      border-radius: var(--r);
+      overflow: hidden;
+      border: 1.5px solid #c8d4f0;
+      box-shadow: var(--sh);
+      animation: slideIn 0.35s ease;
+    }
+    .rdoc-topbar {
+      background: var(--navy);
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .rdoc-topbar span { color: var(--white); font-size: 12.5px; font-weight: 700; }
+    .rdoc-done {
+      background: var(--accent);
+      color: var(--navy);
+      font-size: 9px;
+      font-weight: 900;
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+    .rdoc-meta { display: flex; border-bottom: 1px solid var(--border); background: var(--white); }
+    .rdoc-meta-cell { flex: 1; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+    .rdoc-meta-cell:not(:last-child) { border-right: 1px solid var(--border); }
+    .rmc-label { font-size: 9.5px; font-weight: 700; color: var(--muted); letter-spacing: .04em; }
+    .rmc-val { font-size: 12px; font-weight: 700; color: var(--ink); }
+    .rdoc-section { border-bottom: 1px solid var(--border); background: var(--white); }
+    .rdoc-sec-label { padding: 9px 14px; font-size: 11px; font-weight: 900; }
+    .rdoc-sec-label.tasks  { background: #eef3ff; color: var(--navy); }
+    .rdoc-sec-label.issues { background: #fff7ed; color: #92400e; }
+    .rdoc-sec-label.memo   { background: #f5f0ff; color: #5b21b6; }
+    .rdoc-sec-label.next   { background: #e8f5ee; color: #155724; }
+    .rdoc-sec-body { padding: 11px 14px 13px; display: flex; flex-direction: column; gap: 7px; }
+    .rdoc-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.6; color: var(--ink); }
+    .rdoc-item-bullet { flex-shrink: 0; margin-top: 1px; }
+    .rdoc-actions { display: flex; gap: 8px; padding: 12px 14px; background: var(--white); }
+    .rdoc-btn {
+      flex: 1;
+      padding: 11px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--white);
+      color: var(--navy);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .rdoc-btn:hover { border-color: var(--navy); background: var(--off); }
+    .copy-toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--navy);
+      color: var(--white);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 100px;
+      box-shadow: var(--sh-m);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+      z-index: 100;
+    }
+    .copy-toast.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -291,6 +430,7 @@
     <div class="modes" id="modesContainer">
       <button class="mode-btn active" data-mode="consult">現場相談</button>
       <button class="mode-btn" data-mode="business">事業説明</button>
+      <button class="mode-btn" data-mode="report">日報</button>
       <button class="mode-btn" data-mode="assistant">業務補助</button>
       <button class="mode-btn" data-mode="general">フリー</button>
     </div>
@@ -298,10 +438,12 @@
 
   <div class="chat" id="chatContainer"></div>
 
-  <div class="input-bar">
+  <div class="input-bar" id="inputBar">
     <textarea id="messageInput" placeholder="メッセージを入力..." rows="1"></textarea>
     <button class="send-btn" id="sendBtn" aria-label="送信">➤</button>
   </div>
+
+  <div class="copy-toast" id="copyToast">コピーしました</div>
 
   <script>
     const API_URL = (location.protocol === 'file:')
@@ -311,6 +453,7 @@
     let currentMode = 'consult';
     let histories = { consult: [], business: [], assistant: [], general: [] };
     let isLoading = false;
+    let lastReportText = '';
 
     const WELCOME_TITLES = {
       consult: '現場相談',
@@ -353,6 +496,8 @@
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
     const modesContainer = document.getElementById('modesContainer');
+    const inputBar = document.getElementById('inputBar');
+    const copyToast = document.getElementById('copyToast');
 
     // モード切替
     modesContainer.addEventListener('click', (e) => {
@@ -364,6 +509,14 @@
       currentMode = btn.dataset.mode;
       messageInput.value = '';
       autoResize();
+
+      // 日報モードはフォーム表示、入力バーは隠す
+      if (currentMode === 'report') {
+        inputBar.style.display = 'none';
+        renderReportForm();
+        return;
+      }
+      inputBar.style.display = 'flex';
 
       if (histories[currentMode].length === 0) {
         renderWelcome();
@@ -399,6 +552,184 @@
     function clearWelcome() {
       const w = chatContainer.querySelector('.welcome');
       if (w) w.remove();
+    }
+
+    // ===== 日報フォーム =====
+    function renderReportForm() {
+      chatContainer.innerHTML = '';
+      const form = document.createElement('div');
+      form.className = 'report-form';
+      form.innerHTML = `
+        <div class="report-form-head">
+          <div class="ico">📝</div>
+          <div>
+            <h3>日報メモ入力</h3>
+            <p>殴り書きでOK — AIが正式な日報に整形します</p>
+          </div>
+        </div>
+        <div class="report-form-body">
+          <div class="report-field">
+            <label>現場・会社名（任意）</label>
+            <input type="text" id="reportSite" placeholder="例：〇〇新築現場 / ○○商事">
+          </div>
+          <div class="report-field">
+            <label>本日のメモ</label>
+            <textarea id="reportMemo" placeholder="例：午前 コンクリ打設 3名 完了&#10;午後 型枠の設置進めた&#10;暑かったから休憩多め&#10;1時間遅れた 明日養生確認"></textarea>
+          </div>
+          <button class="report-submit" id="reportSubmit">日報を作成する</button>
+        </div>
+      `;
+      chatContainer.appendChild(form);
+      document.getElementById('reportSubmit').addEventListener('click', generateReport);
+    }
+
+    async function generateReport() {
+      if (isLoading) return;
+      const site = document.getElementById('reportSite').value.trim();
+      const memo = document.getElementById('reportMemo').value.trim();
+      if (!memo) { alert('本日のメモを入力してください'); return; }
+
+      isLoading = true;
+      const btn = document.getElementById('reportSubmit');
+      btn.disabled = true;
+      btn.textContent = '作成中…';
+
+      const today = new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+      const userContent = `日付: ${today}\n現場名: ${site || '記載なし'}\n\n【メモ】\n${memo}`;
+
+      try {
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: [{ role: 'user', content: userContent }], mode: 'report' })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          alert('⚠️ ' + (err.error || `エラー (${res.status})`));
+          return;
+        }
+
+        const data = await res.json();
+        renderReportDoc(data.reply || '', site);
+      } catch (e) {
+        alert('通信エラー: ' + e.message);
+      } finally {
+        isLoading = false;
+        if (document.getElementById('reportSubmit')) {
+          btn.disabled = false;
+          btn.textContent = '日報を作成する';
+        }
+      }
+    }
+
+    // AI出力（厳密フォーマット）をパースして構造化
+    function parseReport(text) {
+      const meta = { date: '—', weather: '—', workers: '—' };
+      const sections = { tasks: [], issues: [], memo: [], next: [] };
+      const labelMap = { '業務内容': 'tasks', '課題・気づき': 'issues', '課題': 'issues', '特記事項': 'memo', '所感': 'memo', '明日の予定': 'next', 'Next': 'next' };
+      let current = null;
+
+      text.split('\n').forEach(raw => {
+        const line = raw.trim();
+        if (!line) return;
+        const mDate = line.match(/^日付[:：]\s*(.+)$/);
+        const mWeather = line.match(/^天気[:：]\s*(.+)$/);
+        const mWorkers = line.match(/^作業員[:：]\s*(.+)$/);
+        if (mDate) { meta.date = mDate[1]; return; }
+        if (mWeather) { meta.weather = mWeather[1].replace(/^・/, ''); return; }
+        if (mWorkers) { meta.workers = mWorkers[1].replace(/^・/, ''); return; }
+        const mSec = line.match(/^\[(.+?)\]$/);
+        if (mSec) {
+          const key = Object.keys(labelMap).find(k => mSec[1].includes(k));
+          current = key ? labelMap[key] : null;
+          return;
+        }
+        if (current) {
+          sections[current].push(line.replace(/^[・\-•]\s*/, ''));
+        }
+      });
+      return { meta, sections };
+    }
+
+    function renderReportDoc(text, site) {
+      lastReportText = text;
+      const { meta, sections } = parseReport(text);
+      chatContainer.innerHTML = '';
+
+      const renderItems = (arr, bullet) =>
+        (arr.length ? arr : ['特になし']).map(t =>
+          `<div class="rdoc-item"><span class="rdoc-item-bullet">${bullet}</span><span>${escapeHtml(t)}</span></div>`
+        ).join('');
+
+      const doc = document.createElement('div');
+      doc.className = 'rdoc';
+      doc.innerHTML = `
+        <div class="rdoc-topbar">
+          <span>📄 作業日報${site ? '｜' + escapeHtml(site) : ''}</span>
+          <span class="rdoc-done">生成完了</span>
+        </div>
+        <div class="rdoc-meta">
+          <div class="rdoc-meta-cell"><span class="rmc-label">日付</span><span class="rmc-val">${escapeHtml(meta.date)}</span></div>
+          <div class="rdoc-meta-cell"><span class="rmc-label">天気/気温</span><span class="rmc-val">${escapeHtml(meta.weather)}</span></div>
+          <div class="rdoc-meta-cell"><span class="rmc-label">作業員</span><span class="rmc-val">${escapeHtml(meta.workers)}</span></div>
+        </div>
+        <div class="rdoc-section">
+          <div class="rdoc-sec-label tasks">📋 本日の業務内容と成果</div>
+          <div class="rdoc-sec-body">${renderItems(sections.tasks, '▸')}</div>
+        </div>
+        <div class="rdoc-section">
+          <div class="rdoc-sec-label issues">⚠️ 発生した課題・気づき</div>
+          <div class="rdoc-sec-body">${renderItems(sections.issues, '!')}</div>
+        </div>
+        <div class="rdoc-section">
+          <div class="rdoc-sec-label memo">💬 特記事項・所感</div>
+          <div class="rdoc-sec-body">${renderItems(sections.memo, '・')}</div>
+        </div>
+        <div class="rdoc-section">
+          <div class="rdoc-sec-label next">→ 明日の予定（Next Action）</div>
+          <div class="rdoc-sec-body">${renderItems(sections.next, '→')}</div>
+        </div>
+        <div class="rdoc-actions">
+          <button class="rdoc-btn" id="reportCopyBtn">📋 コピー</button>
+          <button class="rdoc-btn" id="reportNewBtn">✏️ 新しく作成</button>
+        </div>
+      `;
+      chatContainer.appendChild(doc);
+      chatContainer.scrollTop = 0;
+      document.getElementById('reportCopyBtn').addEventListener('click', () => copyReport(meta, sections, site));
+      document.getElementById('reportNewBtn').addEventListener('click', renderReportForm);
+    }
+
+    function copyReport(meta, sections, site) {
+      const fmt = (arr) => (arr.length ? arr : ['特になし']).map(t => '・' + t).join('\n');
+      const out = `【作業日報】${site ? '　' + site : ''}
+日付: ${meta.date}
+天気/気温: ${meta.weather}
+作業員: ${meta.workers}
+
+■ 本日の業務内容と成果
+${fmt(sections.tasks)}
+
+■ 発生した課題・気づき
+${fmt(sections.issues)}
+
+■ 特記事項・所感
+${fmt(sections.memo)}
+
+■ 明日の予定
+${fmt(sections.next)}`;
+      navigator.clipboard.writeText(out).then(() => showToast('コピーしました')).catch(() => showToast('コピーに失敗しました'));
+    }
+
+    function showToast(msg) {
+      copyToast.textContent = msg;
+      copyToast.classList.add('show');
+      setTimeout(() => copyToast.classList.remove('show'), 1800);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     function addMessage(role, content) {

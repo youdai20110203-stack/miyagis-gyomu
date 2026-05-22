@@ -19,8 +19,42 @@ const SYSTEM_PROMPTS = {
 ユーザーが入力した現場メモや数値をもとに、整った文章や計算結果を提案してください。日本語で簡潔・実用的に。`,
 
   general: `あなたは親切で有能なAIアシスタントです。ユーザーの質問やお願いに対して、
-正確で分かりやすい回答を日本語で返してください。簡潔さを心がけつつ、必要な情報はしっかり伝えます。`
+正確で分かりやすい回答を日本語で返してください。簡潔さを心がけつつ、必要な情報はしっかり伝えます。`,
+
+  report: `あなたは建設現場の作業日報を整形する専門AIです。
+ユーザーが入力した「現場名」と「殴り書きのメモ」をもとに、正式な作業日報に整形してください。
+
+【出力ルール】
+- 必ず以下の厳密なフォーマットで、ラベル行とその内容だけを出力すること。前置きや後書き、説明文は一切書かない。
+- 各セクションの項目は1行に1つ、行頭に「・」を付ける。
+- 情報が無いセクションは「・特になし」と書く。
+- 天気・気温はメモに記載があればそれを、無ければ「・記載なし」と書く（推測で創作しない）。
+- 作業員はメモから人数を読み取る。不明なら「記載なし」。
+
+【出力フォーマット】
+日付: （指定された日付）
+天気: （天気・気温）
+作業員: （人数や氏名）
+[業務内容]
+・…
+[課題・気づき]
+・…
+[特記事項]
+・…
+[明日の予定]
+・…`
 };
+
+// Markdown記法（**強調**, *斜体*, # 見出し, ` コード）を除去してプレーンテキスト化
+function stripMarkdown(text) {
+  return String(text)
+    .replace(/\*\*\*(.+?)\*\*\*/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/`{1,3}([^`]+)`{1,3}/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '・');
+}
 
 export default async function handler(req, res) {
   // CORS（同一オリジンなら不要だが、別ホスト配信に備えて許可）
@@ -48,7 +82,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'messages が不正です' });
     }
 
-    const systemPrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.general;
+    const basePrompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.general;
+    // 全モード共通: Markdown記法を使わせない（アスタリスク等の混入を防ぐ）
+    const systemPrompt = basePrompt +
+      '\n\n【重要】回答にMarkdown記法（**強調**、*斜体*、# 見出し、` コードなど）は一切使わないこと。記号を使わず、自然な日本語の文章で書くこと。箇条書きが必要なときは行頭に「・」を使うこと。';
 
     // 履歴が長すぎる場合は直近 20 件に制限（コスト・トークン対策）
     const trimmed = messages.slice(-20).map(m => ({
@@ -101,7 +138,8 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const reply = data?.content?.[0]?.text || '（応答が空でした）';
+    const rawReply = data?.content?.[0]?.text || '（応答が空でした）';
+    const reply = stripMarkdown(rawReply);
 
     return res.status(200).json({ reply });
   } catch (err) {

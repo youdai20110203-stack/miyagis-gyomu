@@ -499,11 +499,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
     </div>
   </div>
   <nav class="nav">
-    <button class="nav-btn active" onclick="switchPanel('report')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      日報
-    </button>
-    <button class="nav-btn" onclick="switchPanel('estimate')">
+    <button class="nav-btn active" onclick="switchPanel('estimate')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       見積もり
     </button>
@@ -534,85 +530,9 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
 </div>
 
 <!-- ═══════════════════════
-     日報作成パネル
-═══════════════════════ -->
-<div class="panel active" id="panel-report">
-
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-head">
-      <div class="card-head-icon" style="background:#eef3ff;">📝</div>
-      <div><div class="card-head-title">日報メモ入力</div><div class="card-head-sub">殴り書きでOK — 整形はAIが行います</div></div>
-    </div>
-    <div class="card-body">
-      <div class="field">
-        <label>現場・会社名（任意）</label>
-        <div class="field-with-picker">
-          <input type="text" id="reportSite" placeholder="例：〇〇新築現場 / ○○商事">
-          <button class="picker-btn" onclick="openCustomerPicker('report')">📇 顧客から</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>本日のメモ</label>
-        <div class="textarea-wrap">
-          <textarea id="reportInput" placeholder="例：午前 コンクリ打設 3名 完了&#10;午後 型枠の設置進めた&#10;暑かったから休憩多め&#10;1時間遅れた 明日養生確認"></textarea>
-          <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="音声入力">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-          </button>
-        </div>
-        <div class="mic-hint" id="micHint">🎤 マイクボタンで音声入力できます</div>
-      </div>
-      <button class="btn btn-primary" id="reportBtn" onclick="generateReport()">日報を作成する</button>
-      <div class="ai-orb-wrap" id="reportLoader">
-        <div class="ai-orb">
-          <div class="ai-orb-ring"></div>
-          <div class="ai-orb-ring-2"></div>
-          <div class="ai-orb-core"></div>
-          <div class="ai-orb-p"></div><div class="ai-orb-p"></div><div class="ai-orb-p"></div>
-          <div class="ai-orb-p"></div><div class="ai-orb-p"></div><div class="ai-orb-p"></div>
-        </div>
-        <div class="ai-orb-text"><span class="ai-orb-text-inner" id="reportThink">現場メモを解析中…</span></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="rdoc" id="rdoc">
-    <div class="rdoc-topbar">
-      <span>📄 作業日報</span>
-      <span class="rdoc-done">生成完了</span>
-    </div>
-    <div class="rdoc-meta">
-      <div class="rdoc-meta-cell"><span class="rmc-label">日付</span><span class="rmc-val" id="r-date">—</span></div>
-      <div class="rdoc-meta-cell"><span class="rmc-label">天気 / 気温</span><span class="rmc-val" id="r-weather">—</span></div>
-      <div class="rdoc-meta-cell"><span class="rmc-label">作業員</span><span class="rmc-val" id="r-workers">—</span></div>
-    </div>
-    <div class="rdoc-section" id="r-tasks-section">
-      <div class="rdoc-sec-label tasks">📋 本日の業務内容と成果</div>
-      <div class="rdoc-sec-body" id="r-tasks"></div>
-    </div>
-    <div class="rdoc-section" id="r-issues-section">
-      <div class="rdoc-sec-label issues">⚠️ 発生した課題・気づき</div>
-      <div class="rdoc-sec-body" id="r-issues"></div>
-    </div>
-    <div class="rdoc-section" id="r-memo-section" style="display:none">
-      <div class="rdoc-sec-label memo">💬 特記事項・所感</div>
-      <div class="rdoc-sec-body" id="r-memo"></div>
-    </div>
-    <div class="rdoc-section" id="r-next-section">
-      <div class="rdoc-sec-label next">→ 明日の予定（Next Action）</div>
-      <div class="rdoc-sec-body" id="r-next"></div>
-    </div>
-    <div class="inv-action-row" style="padding-top:12px;padding-bottom:14px;background:var(--white);">
-      <button class="inv-action-btn" onclick="copyReport()">📋 コピー</button>
-      <button class="inv-action-btn paid-mark" onclick="saveReport()">💾 保存する</button>
-    </div>
-  </div>
-
-</div>
-
-<!-- ═══════════════════════
      見積もりパネル
 ═══════════════════════ -->
-<div class="panel" id="panel-estimate">
+<div class="panel active" id="panel-estimate">
 
   <div class="card">
     <div class="card-head">
