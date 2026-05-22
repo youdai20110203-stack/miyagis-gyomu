@@ -56,27 +56,47 @@ export default async function handler(req, res) {
       content: String(m.content || '').slice(0, 4000)
     }));
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: trimmed
-      })
-    });
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const MAX_RETRIES = 4;
+    let response;
+    let lastErrText = '';
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: trimmed
+        })
+      });
+
+      if (response.ok) break;
+
+      lastErrText = await response.text();
+
+      // 過負荷(529)・レート制限(429)・一時的サーバーエラー(5xx)はリトライ
+      const retryable = response.status === 429 || response.status === 529 || response.status >= 500;
+      if (!retryable || attempt === MAX_RETRIES) break;
+
+      // 指数バックオフ: 0.5s, 1s, 2s, 4s
+      await sleep(500 * Math.pow(2, attempt));
+    }
 
     if (!response.ok) {
-      const errText = await response.text();
-      console.error('Anthropic API error:', response.status, errText);
+      console.error('Anthropic API error:', response.status, lastErrText);
+      const isOverloaded = response.status === 529 || lastErrText.includes('overloaded');
       return res.status(response.status).json({
-        error: 'AI応答の取得に失敗しました',
-        detail: errText.slice(0, 500)
+        error: isOverloaded
+          ? 'AIが混雑しています。少し待ってからもう一度送信してください。'
+          : 'AI応答の取得に失敗しました',
+        detail: lastErrText.slice(0, 500)
       });
     }
 
