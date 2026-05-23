@@ -1,0 +1,32 @@
+{
+  "name": "Miyagi's 業務 Chat",
+  "short_name": "業務Chat",
+  "description": "宮城の建設業向けAI相談チャット",
+  "start_url": "/AIchat.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1c2f5e",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231c2f5e' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23e8a020'/><path d='M96 60v72M60 96h72' stroke='%231c2f5e' stroke-width='8' stroke-linecap='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231c2f5e' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23e8a020'/><path d='M96 60v72M60 96h72' stroke='%231c2f5e' stroke-width='8' stroke-linecap='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "productivity"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23f7f8fb' width='540' height='720'/></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml"
+    }
+  ]
+}

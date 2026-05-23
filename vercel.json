@@ -1,13 +1,28 @@
 {
+  "name": "miyagi-kensetsu-ai",
   "cleanUrls": true,
   "trailingSlash": false,
   "headers": [
+    {
+      "source": "/manifest.json",
+      "headers": [
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "microphone=(self)" }
+        { "key": "Permissions-Policy", "value": "microphone=(self)" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
       ]
     }
   ]
