@@ -1,15 +1,6 @@
-const CACHE_NAME = 'miyagi-chat-v1';
-const urlsToCache = [
-  '/AIchat.html',
-  '/manifest.json',
-];
+const CACHE_NAME = 'miyagi-chat-v2';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache).catch(() => {});
-    })
-  );
   self.skipWaiting();
 });
 
@@ -30,14 +21,13 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-
+  if (event.request.destination === 'document') {
+    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+    return;
+  }
   event.respondWith(
     caches.match(event.request)
       .then(response => response || fetch(event.request))
-      .catch(() => {
-        if (event.request.destination === 'document') {
-          return caches.match('/AIchat.html');
-        }
-      })
+      .catch(() => null)
   );
 });
