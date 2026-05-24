@@ -1590,6 +1590,11 @@ function renderHistory() {
       <div class="hist-item-tags"><span class="htag">${tag}</span>${name!=='—'?`<span class="htag">${name}</span>`:''}</div>
     </div>`;
   }).join('');
+
+  const reportHtml = renderMonthlyReport();
+  if (reportHtml) {
+    list.insertAdjacentHTML('afterend', reportHtml);
+  }
 }
 
 function openHistDetail(idx) {
@@ -2571,6 +2576,71 @@ function renderDashboard() {
       <div class="dash-sub">請求発行ベース</div>
     </div>`;
   countUp(wrap, 900);
+}
+
+/* ════════════════════
+   月次・年次レポート
+════════════════════ */
+function renderMonthlyReport() {
+  const invs = loadInvoices();
+  if (invs.length === 0) return;
+
+  const stats = {};
+  invs.forEach(inv => {
+    const ym = inv.issuedAt.substring(0, 7);
+    if (!stats[ym]) stats[ym] = { total: 0, count: 0, paid: 0, unpaid: 0, tax: 0 };
+    const rate = parseFloat(inv.taxRate || 0.1);
+    const taxAmt = Math.floor(inv.subtotal * rate);
+    stats[ym].total += inv.total;
+    stats[ym].count += 1;
+    stats[ym].tax += taxAmt;
+    if (inv.status === 'paid') stats[ym].paid += inv.total;
+    if (inv.status === 'sent') stats[ym].unpaid += inv.total;
+  });
+
+  const months = Object.keys(stats).sort();
+  if (months.length === 0) return;
+
+  const maxRevenue = Math.max(...months.map(m => stats[m].total));
+  const totalRevenue = months.reduce((s, m) => s + stats[m].total, 0);
+  const totalTax = months.reduce((s, m) => s + stats[m].tax, 0);
+
+  let html = `<div style="margin-top:20px;">
+    <h3 style="font-size:14px;font-weight:900;color:var(--navy);margin-bottom:12px;">📈 月次・年次レポート</h3>
+
+    <div style="background:var(--off);border-radius:var(--r-sm);padding:12px;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div><span style="font-size:10px;color:var(--muted);font-weight:700;">累計売上</span><br><span style="font-size:18px;font-weight:900;color:var(--navy);">¥${totalRevenue.toLocaleString()}</span></div>
+        <div><span style="font-size:10px;color:var(--muted);font-weight:700;">消費税合計</span><br><span style="font-size:18px;font-weight:900;color:var(--navy);">¥${totalTax.toLocaleString()}</span></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);">${months.length}ヶ月分（${months[0]} 〜 ${months[months.length-1]}）</div>
+    </div>
+
+    <div style="border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;">
+      <div style="padding:10px 12px;background:linear-gradient(135deg,#dbeafe,#eef3ff);border-bottom:1px solid var(--border);">
+        <div style="font-size:11px;font-weight:900;color:var(--navy);">月別売上推移</div>
+      </div>
+      <div style="padding:12px;max-height:280px;overflow-y:auto;">`;
+
+  months.forEach(ym => {
+    const s = stats[ym];
+    const pct = maxRevenue > 0 ? (s.total / maxRevenue) * 100 : 0;
+    const [y, m] = ym.split('-');
+    html += `
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:11px;font-weight:700;color:var(--navy);">${parseInt(m)}月</span>
+          <span style="font-size:11px;color:var(--muted);">¥${s.total.toLocaleString()} (${s.count}件)</span>
+        </div>
+        <div style="width:100%;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--accent),var(--accent2));"></div>
+        </div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px;">入金 ¥${s.paid.toLocaleString()} | 未入金 ¥${s.unpaid.toLocaleString()}</div>
+      </div>`;
+  });
+
+  html += `</div></div></div>`;
+  return html;
 }
 
 /* ════════════════════
