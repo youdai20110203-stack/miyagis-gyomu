@@ -2688,9 +2688,6 @@ function openSettings() {
   document.getElementById('voiceSupportInfo').textContent =
     isIOS() ? 'iPhone/iPadは非対応（キーボードマイクを使用）' :
     (window.SpeechRecognition || window.webkitSpeechRecognition) ? '対応（Android Chrome）' : '非対応（Android Chromeを推奨）';
-  const lastBackup = localStorage.getItem('mgyb_last_backup');
-  document.getElementById('lastBackupInfo').textContent =
-    lastBackup ? `最終バックアップ：${new Date(lastBackup).toLocaleString()}` : '※ まだ一度もバックアップしていません';
   /* 発行者情報読み込み */
   const iss = loadIssuer();
   document.getElementById('issuerName').value  = iss.name  || '';
