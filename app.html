@@ -1034,7 +1034,7 @@ function switchPanel(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
-  const idx = {report:0, estimate:1, invoice:2, customer:3, history:4}[id];
+  const idx = {estimate:0, invoice:1, customer:2, history:3}[id];
   document.querySelectorAll('.nav-btn')[idx].classList.add('active');
   if (id === 'history')  renderHistory();
   if (id === 'customer') renderCustomers();
