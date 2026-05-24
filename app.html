@@ -3091,6 +3091,13 @@ function scheduleAutoBackup() {
   document.getElementById('settingsBtn').classList.toggle('has-alert', hasOverdue);
 })();
 
+/* Service Worker を無効化（キャッシュ問題対応） */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+}
+
 scheduleAutoBackup();
 </script>
 </body>
