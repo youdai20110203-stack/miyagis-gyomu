@@ -850,39 +850,9 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
       </div>
 
       <div class="settings-sec">
-        <h4>💾 バックアップ（書き出し）</h4>
-        <div class="settings-desc">全データ（顧客・日報・見積もり・請求書）を1つのJSONファイルとしてダウンロードします。<br>ブラウザのデータが消えても、このファイルから復元できます。<strong style="color:var(--navy);">定期的にバックアップを取ることを推奨します。</strong></div>
-        <div class="settings-btn-row">
-          <button class="settings-btn primary" onclick="exportAllData()">📥 全データをダウンロード</button>
-        </div>
-        <div id="lastBackupInfo" style="font-size:10.5px;color:var(--muted);margin-top:8px;text-align:center;"></div>
-      </div>
-
-      <div class="settings-sec">
         <h4>⏪ 復元ポイント（自動スナップショット）</h4>
-        <div class="settings-desc">データ保存ごとに直近5世代分の状態を自動保管しています。誤って削除した時などにここから復元できます。</div>
+        <div class="settings-desc">毎日自動でデータをバックアップしています。誤って削除した時などにここから復元できます。</div>
         <div id="snapshotList" style="display:flex;flex-direction:column;gap:6px;"></div>
-      </div>
-
-      <div class="settings-sec">
-        <h4>📊 会計ソフト連携（CSV出力）</h4>
-        <div class="settings-desc">請求書データを会計ソフトに取り込める形式で書き出します。<br><strong style="color:var(--navy);">freee / 弥生会計 / マネーフォワード</strong> で読み込めます。</div>
-        <div class="settings-btn-row">
-          <button class="settings-btn" onclick="exportInvoicesCSV('freee')">freee形式</button>
-          <button class="settings-btn" onclick="exportInvoicesCSV('yayoi')">弥生形式</button>
-          <button class="settings-btn" onclick="exportInvoicesCSV('generic')">汎用形式</button>
-        </div>
-        <div style="font-size:10.5px;color:var(--muted);margin-top:8px;">未入金の請求書も含めて全件出力します。出力後、会計ソフト側で「仕訳取込」を実行してください。</div>
-      </div>
-
-      <div class="settings-sec">
-        <h4>📂 復元（読み込み）</h4>
-        <div class="settings-desc">過去にダウンロードしたバックアップJSONを読み込みます。<br><strong style="color:#b91c1c;">「上書き復元」を選ぶと現在のデータがすべて消えます。</strong></div>
-        <input type="file" id="restoreFile" class="file-input" accept=".json,application/json" onchange="handleRestoreFile(event)">
-        <div class="settings-btn-row">
-          <button class="settings-btn" onclick="document.getElementById('restoreFile').click();_restoreMode='merge';">➕ 追加マージ復元</button>
-          <button class="settings-btn danger" onclick="document.getElementById('restoreFile').click();_restoreMode='replace';">⚠ 上書き復元</button>
-        </div>
       </div>
 
       <div class="settings-sec" style="background:linear-gradient(135deg,#fef3c7,#fff7ed);border:1px solid #fde68a;border-radius:12px;padding:14px 16px;">
@@ -897,7 +867,7 @@ textarea{resize:vertical;min-height:110px;line-height:1.7;}
           <li>🔔 <strong>入金催促の自動通知</strong> — 期日超過を翌日にLINE通知</li>
           <li>📈 <strong>月次・年次レポート</strong> — 売上推移グラフ、税額試算</li>
         </ul>
-        <div style="margin-top:10px;font-size:10.5px;color:#92400e;font-weight:700;">※ 体験版は1台のスマホ・ブラウザでのみ動作します。機種変更時は事前に「バックアップ書き出し」を必ず行ってください。</div>
+        <div style="margin-top:10px;font-size:10.5px;color:#92400e;font-weight:700;">※ 体験版は1台のスマホ・ブラウザでのみ動作します。毎日自動でバックアップされます。</div>
       </div>
 
       <div class="settings-sec">
