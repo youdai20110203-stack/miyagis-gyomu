@@ -2670,25 +2670,37 @@ function openSettings() {
 function renderSnapshotList() {
   const list = document.getElementById('snapshotList');
   if (!list) return;
+  const autoBackups = JSON.parse(localStorage.getItem('mgyb_auto_backups')||'[]');
+  const lastAutoBackup = localStorage.getItem('mgyb_last_auto_backup');
+  let html = '';
+  if (lastAutoBackup) {
+    const dt = new Date(lastAutoBackup);
+    html += `<div style="padding:10px;background:linear-gradient(135deg,#d1fae5,#ecfdf5);border:1px solid #a7f3d0;border-radius:8px;margin-bottom:12px;">
+      <div style="font-size:11px;color:#065f46;font-weight:700;margin-bottom:4px;">✅ 自動バックアップ</div>
+      <div style="font-size:11px;color:#047857;">最終実行: ${dt.toLocaleDateString()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</div>
+      <div style="font-size:10px;color:#059669;margin-top:3px;">毎日 00:00 に自動保存（最新5世代）</div>
+    </div>`;
+  }
   const snaps = listSnapshots();
   if (snaps.length === 0) {
-    list.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">スナップショットはまだありません</div>';
-    return;
+    html += '<div style="font-size:11px;color:var(--muted);text-align:center;padding:10px;">スナップショットはまだありません</div>';
+  } else {
+    html += snaps.map((s, i) => {
+      const dt = new Date(s.ts);
+      const customers = JSON.parse(s.customers).length;
+      const invoices  = JSON.parse(s.invoices).length;
+      const hist      = JSON.parse(s.hist).length;
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f7f8fb;border:1px solid var(--border);border-radius:8px;">
+          <div style="font-size:11px;line-height:1.5;">
+            <strong style="color:var(--navy);font-size:12px;">${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</strong>
+            <span style="color:var(--muted);">　顧客 ${customers} / 請求 ${invoices} / 履歴 ${hist}</span>
+          </div>
+          <button class="btn btn-outline" style="padding:6px 12px;font-size:11px;width:auto;" onclick="restoreSnapshot(${i})">復元</button>
+        </div>`;
+    }).join('');
   }
-  list.innerHTML = snaps.map((s, i) => {
-    const dt = new Date(s.ts);
-    const customers = JSON.parse(s.customers).length;
-    const invoices  = JSON.parse(s.invoices).length;
-    const hist      = JSON.parse(s.hist).length;
-    return `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#f7f8fb;border:1px solid var(--border);border-radius:8px;">
-        <div style="font-size:11px;line-height:1.5;">
-          <strong style="color:var(--navy);font-size:12px;">${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}</strong>
-          <span style="color:var(--muted);">　顧客 ${customers} / 請求 ${invoices} / 履歴 ${hist}</span>
-        </div>
-        <button class="btn btn-outline" style="padding:6px 12px;font-size:11px;width:auto;" onclick="restoreSnapshot(${i})">復元</button>
-      </div>`;
-  }).join('');
+  list.innerHTML = html;
 }
 
 function renderStampPreview() {
@@ -3003,6 +3015,34 @@ addItem();
 initVoiceInput();
 checkBackupStatus();
 setTimeout(checkSharedInvoice, 200);
+/* 自動バックアップ */
+function autoBackupData() {
+  const backup = {
+    timestamp: Date.now(),
+    data: {
+      issuer: loadIssuer(),
+      customers: loadCustomers(),
+      history: JSON.parse(localStorage.getItem('mgyb_hist')||'[]'),
+      invoices: loadInvoices(),
+    }
+  };
+  const backups = JSON.parse(localStorage.getItem('mgyb_auto_backups')||'[]');
+  backups.push(backup);
+  if (backups.length > 5) backups.shift();
+  localStorage.setItem('mgyb_auto_backups', JSON.stringify(backups));
+  localStorage.setItem('mgyb_last_auto_backup', new Date().toISOString());
+}
+
+function scheduleAutoBackup() {
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const msUntilMidnight = tomorrow - now;
+  setTimeout(() => {
+    autoBackupData();
+    setInterval(autoBackupData, 24 * 60 * 60 * 1000);
+  }, msUntilMidnight);
+}
+
 /* 起動時に期日超過チェック */
 (function checkOverdueOnLoad(){
   const invs = loadInvoices();
@@ -3010,6 +3050,8 @@ setTimeout(checkSharedInvoice, 200);
   const hasOverdue = invs.some(i => i.status==='sent' && new Date(i.dueAt).getTime() < now);
   document.getElementById('settingsBtn').classList.toggle('has-alert', hasOverdue);
 })();
+
+scheduleAutoBackup();
 </script>
 </body>
 </html>
